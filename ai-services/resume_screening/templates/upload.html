@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bulk Resume Screening</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .add-btn {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    .add-btn:hover {
+      background-color: #0056b3;
+    }
+    input[type="file"] {
+      display: block;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bulk Resume Screening</h1>
+
+    {% if error %}
+      <p style="color: red; font-weight: bold;">{{ error }}</p>
+    {% endif %}
+
+    <form id="resumeForm" action="/screen" method="POST" enctype="multipart/form-data">
+      
+      <!-- Job Description -->
+      <label for="jd">Job Description:</label><br>
+      <textarea id="jd" name="jd" rows="6" cols="60" placeholder="Paste Job Description here..." required></textarea><br><br>
+
+      <!-- Upload Multiple Resumes -->
+      <label>Upload Resumes:</label><br>
+      <div id="resumeInputs">
+        <input type="file" name="resumes[]" accept=".pdf,.doc,.docx" required>
+      </div>
+      <button type="button" class="add-btn" id="addResumeBtn">+ Add Another Resume</button>
+      <br><br>
+
+      <!-- Cutoff Score -->
+      <label for="cutoff">Cutoff Score:</label>
+      <input type="number" id="cutoff" step="0.01" name="cutoff" placeholder="e.g. 0.75" required><br><br>
+
+      <!-- Checkbox for auto-mail -->
+      <label>
+        <input type="checkbox" name="send_mails">
+        Auto-send emails to shortlisted candidates
+      </label><br><br>
+
+      <button type="submit">Screen Now</button>
+    </form>
+
+    <p id="fileList" style="color: lightgray; margin-top: 10px;"></p>
+  </div>
+
+  <script>
+    document.getElementById('addResumeBtn').addEventListener('click', function() {
+      const div = document.createElement('div');
+      div.innerHTML = `<input type="file" name="resumes[]" accept=".pdf,.doc,.docx" required>`;
+      document.getElementById('resumeInputs').appendChild(div);
+    });
+
+    document.getElementById('resumeInputs').addEventListener('change', () => {
+      const files = document.querySelectorAll('input[type="file"]');
+      let count = 0;
+      files.forEach(f => {
+        if (f.files.length > 0) count++;
+      });
+      document.getElementById('fileList').textContent = `${count} resume(s) selected`;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+Flask
+flask-cors
+PyPDF2
+docx2txt
+sentence-transformers
+torch
+spacy
+python-dotenv
+pdfminer.six
