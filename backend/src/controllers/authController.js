@@ -3,39 +3,60 @@ import jwt from "jsonwebtoken";
 
 const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-//  Register
+// Public registration — Candidates only
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role, department, designation, baseSalary } = req.body;
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password)
+      return res.status(400).json({ message: "Name, email and password are required" });
 
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: "User already exists" });
 
-    if (!role) return res.status(400).json({ message: "Role is required" });
-
-    const userData = { name, email, password, role };
-
-    //Employee-specific fields
-    if (role === "Employee") {
-      userData.department = department || "Not Assigned";
-      userData.designation = designation || "Not Assigned";
-      userData.baseSalary = baseSalary || 30000;
-      userData.joinDate = new Date();
-    }
-
-    const user = await User.create(userData);
+    const user = await User.create({ name, email, password, role: "Candidate" });
     const token = generateToken(user._id);
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "Registered successfully",
       token,
       role: user.role,
       name: user.name,
       email: user.email,
     });
   } catch (error) {
-    console.error("❌ Registration error:", error);
+    console.error("Registration error:", error);
     res.status(500).json({ message: "Registration failed", error: error.message });
+  }
+};
+
+// One-time setup — creates the first Admin (fails if any Admin already exists)
+export const setupAdmin = async (req, res) => {
+  try {
+    const existing = await User.findOne({ role: "Admin" });
+    if (existing)
+      return res.status(409).json({ message: "Admin already exists. Use admin login." });
+
+    const { name, email, password } = req.body;
+    if (!name || !email || !password)
+      return res.status(400).json({ message: "Name, email and password are required" });
+
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ message: "Email already in use" });
+
+    const admin = await User.create({ name, email, password, role: "Admin" });
+    const token = generateToken(admin._id);
+
+    res.status(201).json({
+      message: "Admin account created",
+      token,
+      role: admin.role,
+      name: admin.name,
+      email: admin.email,
+    });
+  } catch (error) {
+    console.error("Setup error:", error);
+    res.status(500).json({ message: "Setup failed", error: error.message });
   }
 };
 

@@ -2,7 +2,7 @@ import express from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import { registerUser, loginUser, verifyToken } from "../controllers/authController.js";
+import { registerUser, loginUser, verifyToken, setupAdmin } from "../controllers/authController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
@@ -11,6 +11,9 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/verify-token", verifyToken);
+
+/* One-time admin setup — only works when zero Admins exist */
+router.post("/setup", setupAdmin);
 
 /* Google OAuth - Login */
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));

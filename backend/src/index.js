@@ -1,13 +1,15 @@
 // backend/src/index.js
 import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), ".env") });
+
 import http from "http";
 import { Server as SocketIOServer } from "socket.io";
 import jwt from "jsonwebtoken";
 import connectDB from "./config/db.js";
 import app from "./app.js";
 import Interview from "./models/Interview.js";
-
-dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 

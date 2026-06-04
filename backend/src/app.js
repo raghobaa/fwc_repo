@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
-dotenv.config();
+import { fileURLToPath as _fileURLToPath } from "url";
+import { dirname as _dirname, resolve as _resolve } from "path";
+dotenv.config({ path: _resolve(_dirname(_fileURLToPath(import.meta.url)), ".env") });
 
 import express from "express";
 import cors from "cors";
@@ -12,13 +14,14 @@ import "./config/passport.js";
 
 // Import Routes
 import authRoutes from "./routes/authRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import jobRoutes from "./routes/jobRoutes.js";
 import hrRoutes from "./routes/hrRoutes.js";
-import employeeRoutes from "./routes/employeeRoutes.js"; // ✅ Employee routes
-import payrollRoutes from "./routes/payrollRoutes.js";   // ✅ Payroll routes (new)
-import chatbotRoutes from "./routes/chatbotRoutes.js"; // ✅ Chatbot routes
-import resumeRoutes from "./routes/resumeRoutes.js"; // ✅ Resume screening routes
-import { protect } from "./middlewares/authMiddleware.js"; // ✅ Import protect middleware
+import employeeRoutes from "./routes/employeeRoutes.js";
+import payrollRoutes from "./routes/payrollRoutes.js";
+import chatbotRoutes from "./routes/chatbotRoutes.js";
+import resumeRoutes from "./routes/resumeRoutes.js";
+import { protect } from "./middlewares/authMiddleware.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
 
@@ -75,6 +78,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
    6.  API Routes
 --------------------------------------------------- */
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/hr", hrRoutes);
 app.use("/api/employee", employeeRoutes); //  Employee attendance route
