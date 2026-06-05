@@ -1,13 +1,13 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5010/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 /**
  * Send a message to the chatbot and get a response
  * @param {string} message - The user's message to the chatbot
  * @returns {Promise} - Promise with the chatbot's response
  */
-export const sendMessage = async (message) => {
+export const sendMessage = async (message, userRole = 'employee') => {
   try {
     const token = localStorage.getItem('token');
     
@@ -22,8 +22,11 @@ export const sendMessage = async (message) => {
       },
     };
     
+    const isHrmsDataChat = ['hr', 'admin'].includes(String(userRole).toLowerCase());
+    const endpoint = isHrmsDataChat ? '/api/chatbot/hrms' : '/api/chatbot/message';
+
     const { data } = await axios.post(
-      `${API_URL}/chatbot/message`,
+      `${BASE_URL}${endpoint}`,
       { message },
       config
     );

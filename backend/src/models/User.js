@@ -19,6 +19,19 @@ const userSchema = new mongoose.Schema(
       default: "Pending",
     },
 
+    department: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    skills: [
+      {
+        name: { type: String, trim: true },
+        level: { type: Number, min: 0, max: 100, default: 50 },
+      },
+    ],
+
     googleId: { type: String, default: null },
   },
   { timestamps: true }

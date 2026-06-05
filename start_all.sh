@@ -16,5 +16,8 @@ set -e
 # Chat‑Bot API (Flask wrapper we just added, runs on port 5010)
 (cd /Users/raghav/Downloads/fwc_proj/ai-services/chat-bot && ../.venv/bin/python api_chatbot.py) &
 
+# Resume AI Chatbot service (FastAPI, default port 5009)
+(cd /Users/raghav/Downloads/fwc_proj/ai-services/new_ai && .venv/bin/python main.py) &
+
 # Wait for all background jobs (optional – press Ctrl+C to stop everything)
 wait

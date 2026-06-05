@@ -1,0 +1,27 @@
+# Python cache files - never push these
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments - never push these
+.venv/
+venv/
+env/
+
+# Environment variables - never push secrets!
+.env
+
+# JSON data/export files - too large & not needed
+embeddings_export.json
+atlas-vector-index.json
+
+# Database sample data (optional, push if needed)
+database/sampleData/
+
+# Static files (if auto-generated)
+resume_screening/static/
+
+# OS files
+.DS_Store
+Thumbs.db

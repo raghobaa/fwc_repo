@@ -19,3 +19,4 @@ build/
 # Misc
 .env.local
 .env.*.local
+.venv/
