@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "chatbot": "node chatbotServer.js",
+    "chatbot:dev": "nodemon chatbotServer.js"
   },
   "keywords": [],
   "author": "",

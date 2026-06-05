@@ -38,6 +38,7 @@ import InterviewRoomPage from "./pages/InterviewRoomPage";
 import CandidateInterviewsPage from "./pages/CandidateInterviewsPage";
 import HROnboardingPage from "./pages/HROnboardingPage";
 import CandidateOnboardingPage from "./pages/CandidateOnboardingPage";
+import HRTalentHeatmapPage from "./pages/HRTalentHeatmapPage";
 
 function LayoutWrapper({ children }) {
   const location = useLocation();
@@ -158,6 +159,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ResumeScreeningPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hr/talent-heatmap"
+              element={
+                <ProtectedRoute>
+                  <HRTalentHeatmapPage />
                 </ProtectedRoute>
               }
             />

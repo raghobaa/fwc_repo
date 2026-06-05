@@ -27,4 +27,13 @@ export const getJobApplications = (jobId) => {
 
 export const getAllJobs = () => API.get("/jobs");
 
+export const getTalentHeatmap = () => {
+  const token = localStorage.getItem("token");
+  return API.get("/hr/talent-heatmap", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 export default API;

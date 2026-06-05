@@ -2,9 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { sendMessage } from '../api/chatbotService';
 
 const Chatbot = ({ userRole }) => {
+  const isHrmsDataChat = ['hr', 'admin'].includes(String(userRole).toLowerCase());
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { text: 'Hi there! How can I help you today?', sender: 'bot' }
+    {
+      text: isHrmsDataChat
+        ? 'Hi! Ask me about HRMS data: employees, leaves, payroll, projects, jobs, interviews, feedback, or collection counts.'
+        : 'Hi there! How can I help you today?',
+      sender: 'bot'
+    }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +38,7 @@ const Chatbot = ({ userRole }) => {
     setError(null);
 
     try {
-      const response = await sendMessage(userMessage);
+      const response = await sendMessage(userMessage, userRole);
       setMessages(prev => [...prev, { text: response.response, sender: 'bot' }]);
     } catch (err) {
       console.error('Error getting chatbot response:', err);
@@ -74,7 +80,7 @@ const Chatbot = ({ userRole }) => {
       {isOpen && (
         <div className="absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col">
           <div className="bg-[#1d3e8d] text-white px-4 py-3 rounded-t-lg flex justify-between items-center">
-            <h3 className="font-medium">HRMS Assistant</h3>
+            <h3 className="font-medium">{isHrmsDataChat ? 'HRMS Data Assistant' : 'HRMS Assistant'}</h3>
             <span className="text-xs bg-green-500 px-2 py-1 rounded-full">
               {userRole === 'admin' ? 'Admin' : userRole === 'hr' ? 'HR' : 'Employee'}
             </span>
@@ -116,7 +122,7 @@ const Chatbot = ({ userRole }) => {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Type your message..."
+              placeholder={isHrmsDataChat ? 'Ask about MongoDB collections...' : 'Type your message...'}
               className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#1d3e8d]"
               disabled={isLoading}
             />
