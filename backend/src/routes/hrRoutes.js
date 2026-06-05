@@ -8,6 +8,27 @@ import Feedback from "../models/Feedback.js";
 
 const router = express.Router();
 
+/* POST /api/hr/employees — HR creates an Employee account */
+router.post("/employees", protect, authorizeRoles("HR", "Admin"), async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password)
+      return res.status(400).json({ message: "Name, email and password are required" });
+
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(400).json({ message: "Email already in use" });
+
+    const employee = await User.create({ name, email, password, role: "Employee" });
+    res.status(201).json({
+      message: "Employee account created",
+      user: { _id: employee._id, name: employee.name, email: employee.email, role: employee.role },
+    });
+  } catch (err) {
+    console.error("HR create employee error:", err);
+    res.status(500).json({ message: "Failed to create employee" });
+  }
+});
 const talentBlueprint = {
   Engineering: {
     targetSkills: ["JavaScript", "React", "Node.js", "AWS", "MongoDB"],
