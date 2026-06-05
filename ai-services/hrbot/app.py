@@ -12,7 +12,7 @@ CORS(app)
 # ─── MongoDB ───────────────────────────────────────────────────────────────────
 MONGO_URI = os.getenv(
     "MONGO_URI",
-    "mongodb+srv://Raghav:Ragh%40123@cluster01.5ezw90y.mongodb.net/hrms?appName=Cluster01",
+    
 )
 client = MongoClient(MONGO_URI)
 db = client["hrms"]
