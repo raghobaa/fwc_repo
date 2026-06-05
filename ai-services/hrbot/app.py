@@ -33,7 +33,7 @@ COLLECTIONS = [
 ]
 
 # ─── Gemini AI ─────────────────────────────────────────────────────────────────
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCHMiqnxYyQ3cRQoAoqTYIBNDLj1ZuM3uQ")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
 
