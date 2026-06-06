@@ -33,7 +33,7 @@ export default function AuthForms() {
         : { name: formData.name, email: formData.email, password: formData.password };
 
       const { data } = await API.post(endpoint, payload);
-
+      
       localStorage.clear();
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
