@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Screening Results</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Screening Results</h1>
+    <p>Cutoff Score: <b>{{ cutoff }}</b></p>
+    <table border="1" cellpadding="10">
+      <thead>
+        <tr>
+          <th>Candidate Name</th>
+          <th>Email</th>
+          <th>Score</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td>{{ r.name }}</td>
+          <td>{{ r.email }}</td>
+          <td>{{ r.score }}</td>
+          <td>{{ r.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <br>
+    <a href="/" style="text-decoration:none; color:white;">
+      <button style="background:#007BFF; border:none; padding:8px 14px; color:white; border-radius:5px;">⬅️ Back to Upload</button>
+    </a>
+  </div>
+</body>
+</html>
