@@ -1,47 +1,60 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
-  const features = [
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const cards = [
     {
-      title: "User & HR Management",
-      description: "Manage HR accounts, employee records, and access controls to ensure smooth operations.",
-      onClick: () => alert("User & HR Management feature coming soon!"),
+      title: "User Management",
+      description: "Create and manage Admin, HR, Employee and Candidate accounts. Assign and change roles.",
+      action: () => navigate("/admin/users"),
+      badge: "Core",
+      badgeColor: "bg-red-100 text-red-700",
     },
     {
-      title: "Analytics",
-      description: "View insights like hiring stats, attendance reports, and payroll trends in one place.",
-      onClick: () => alert("Analytics feature coming soon!"),
+      title: "HR Dashboard",
+      description: "Access all HR tools — attendance, leave requests, payroll, onboarding, and interviews.",
+      action: () => navigate("/hr"),
+      badge: "HR Tools",
+      badgeColor: "bg-blue-100 text-blue-700",
     },
     {
-      title: "System Tools",
-      description: "Access system settings, audit logs, and advanced configurations.",
-      onClick: () => alert("System Tools feature coming soon!"),
+      title: "Recruitment",
+      description: "View job postings, review candidate applications, and manage resume screening.",
+      action: () => navigate("/hr/applications"),
+      badge: "Hiring",
+      badgeColor: "bg-green-100 text-green-700",
     },
   ];
 
   return (
-    <div className="bg-gray-100 min-h-screen p-8 pt-20 text-gray-800 font-inter">
-      <div className="max-w-7xl mx-auto">
-        {/* Page Title */}
-        <h1 className="text-3xl font-bold mb-10 tracking-tight text-center">
-          Admin Dashboard
-        </h1>
+    <div className="bg-gray-100 min-h-screen p-8 pt-20 text-gray-800">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+          <p className="text-gray-500 mt-1">Welcome back, {user.name || "Admin"}</p>
+        </div>
 
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
-          {features.map((f, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          {cards.map((card, i) => (
             <div
               key={i}
-              onClick={f.onClick}
-              className="cursor-pointer bg-white rounded-2xl shadow-lg border border-gray-200 p-8 flex flex-col justify-between h-48 hover:shadow-xl hover:-translate-y-1 transition-all duration-200"
+              onClick={card.action}
+              className="cursor-pointer bg-white rounded-2xl shadow border border-gray-200 p-6 flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
             >
               <div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-900">
-                  {f.title}
-                </h3>
-                <p className="text-sm text-gray-600 leading-snug line-clamp-3">
-                  {f.description}
-                </p>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900">{card.title}</h3>
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${card.badgeColor}`}>
+                    {card.badge}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 leading-snug">{card.description}</p>
+              </div>
+              <div className="mt-4 text-sm font-medium text-gray-800 hover:underline">
+                Open →
               </div>
             </div>
           ))}

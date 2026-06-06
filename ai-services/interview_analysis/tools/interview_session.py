@@ -18,6 +18,7 @@ class InterviewSession:
         
     def start_interview(self):
         """Start the interview session"""
+        print(f"Starting interview with {self.candidate_name} for position: {self.job_description}")
         self.start_time = datetime.now()
         self.end_time = self.start_time + timedelta(minutes=INTERVIEW_DURATION_MINUTES)
         self.is_active = True

@@ -1,60 +1,34 @@
+from google import genai
+from google.genai import types
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Dummy model (No Gemini Required)
+# Configure Gemini API with new google.genai SDK
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+_client = genai.Client(api_key=GEMINI_API_KEY)
 
-class DummyResponse:
-    def __init__(self, text):
-        self.text = text
+# Model to use — gemini-1.5-flash has 1,500 req/day on the free tier
+_MODEL = "gemini-2.5-flash"
 
-class DummyModel:
-    def generate_content(self, prompt):
+# Thin wrapper so existing code calling model.generate_content(prompt) keeps working
+class _ModelWrapper:
+    def generate_content(self, prompt: str):
+        response = _client.models.generate_content(
+            model=_MODEL,
+            contents=prompt,
+        )
+        # Expose a .text attribute matching the old SDK's response shape
+        class _Resp:
+            text = response.text
+        return _Resp()
 
-        prompt = str(prompt).lower()
+model = _ModelWrapper()
 
-        # Scoring response
-        if "technical knowledge" in prompt:
-            return DummyResponse("""
-Technical Knowledge: 8
-Communication Skills: 8
-Problem Solving: 7
-Experience Relevance: 8
-Confidence: 8
-
-Candidate demonstrated good understanding and communication.
-""")
-
-        # Final evaluation response
-        if "overall score" in prompt:
-            return DummyResponse("""
-Overall Score: 80
-
-Strengths:
-- Good communication
-- Relevant experience
-- Positive attitude
-
-Areas for Improvement:
-- More technical depth
-- More project examples
-
-Recommendation: HIRE
-
-Detailed Feedback:
-Candidate performed well and is suitable for the role.
-""")
-
-        return DummyResponse("Interview completed successfully.")
-
-# Use dummy model instead of Gemini
-model = DummyModel()
-
-INTERVIEW_DURATION_MINUTES = 15
-
-QUESTION_INTERVAL_SECONDS = 30
-
+# Interview Configuration
+INTERVIEW_DURATION_MINUTES = 15  # Fixed interview duration
+QUESTION_INTERVAL_SECONDS = 30   # Time between questions
 SCORING_CRITERIA = {
     "technical_knowledge": 30,
     "communication_skills": 25,
@@ -63,28 +37,46 @@ SCORING_CRITERIA = {
     "confidence": 10
 }
 
+# Voice Configuration
 VOICE_SETTINGS = {
-    "speech_rate": 150,
+    "speech_rate": 150,  # Words per minute
     "voice_volume": 0.8,
-    "voice_id": 0
+    "voice_id": 0  # Default voice
 }
 
+# Interview Prompts
 INTERVIEW_PROMPTS = {
     "opening": """
-Welcome to your AI-powered interview.
-This interview will last approximately {duration} minutes.
-Are you ready to begin?
-""",
-
+    Welcome to your AI-powered interview! I'm your AI interviewer. 
+    This interview will last approximately {duration} minutes and will consist of several questions.
+    Please speak clearly and take your time to answer each question thoughtfully.
+    Are you ready to begin?
+    """,
+    
     "scoring_prompt": """
-Evaluate candidate response:
-
-Response: {response}
-Question: {question}
-""",
-
+    Based on the candidate's response, evaluate them on the following criteria (0-10 scale):
+    1. Technical Knowledge: How well did they demonstrate understanding of the subject?
+    2. Communication Skills: How clear and articulate was their response?
+    3. Problem Solving: How well did they approach and solve problems?
+    4. Experience Relevance: How relevant was their experience to the question?
+    5. Confidence: How confident and professional did they sound?
+    
+    Candidate's response: {response}
+    Question asked: {question}
+    
+    Provide scores for each criterion and a brief explanation for each score.
+    """,
+    
     "final_evaluation": """
-Interview Summary:
-{interview_summary}
-"""
+    Based on all the candidate's responses during this interview, provide a comprehensive evaluation:
+    
+    Interview Summary: {interview_summary}
+    
+    Please provide:
+    1. Overall score (0-100)
+    2. Strengths identified
+    3. Areas for improvement
+    4. Recommendation (HIRE/NO HIRE/MAYBE)
+    5. Detailed feedback
+    """
 }

@@ -1,64 +1,79 @@
+// backend/src/index.js
 import dotenv from "dotenv";
-import path from "path";
-import fs from 'fs';
-import mongoose from 'mongoose';
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), ".env") });
+
+import http from "http";
+import { Server as SocketIOServer } from "socket.io";
+import jwt from "jsonwebtoken";
+import connectDB from "./config/db.js";
 import app from "./app.js";
-import User from "./models/User.js";
+import Interview from "./models/Interview.js";
 
-dotenv.config();
+const PORT = process.env.PORT || 5000;
 
-const PORT = process.env.PORT || 5001;
+const server = http.createServer(app);
 
-// ========== MONGODB CONNECTION ==========
-const connectDB = async () => {
+// Socket.IO for interview signaling
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+const nsp = io.of("/interview");
+
+nsp.use(async (socket, next) => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`📊 Database: ${conn.connection.name}`);
-  } catch (error) {
-    console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    process.exit(1);
+    const { token, roomId } = socket.handshake.auth || {};
+    if (!token || !roomId) return next(new Error("unauthorized"));
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded?.id;
+    if (!userId) return next(new Error("unauthorized"));
+    const iv = await Interview.findOne({ roomId }).lean();
+    if (!iv) return next(new Error("room_not_found"));
+    const isParticipant = iv.candidateId?.toString() === userId || (iv.interviewerIds || []).some((id) => id.toString() === userId);
+    // HR can also join any interview
+    // Note: we don't fetch user here; treat non-participants as forbidden
+    if (!isParticipant) return next(new Error("forbidden"));
+    socket.data.userId = userId;
+    socket.data.roomId = roomId;
+    return next();
+  } catch (e) {
+    return next(new Error("unauthorized"));
   }
-};
+});
 
-// Connect to MongoDB
-connectDB();
+nsp.on("connection", (socket) => {
+  const { roomId, userId } = socket.data;
+  socket.join(roomId);
+  // Notify others only; avoid sending to self to prevent both peers offering
+  socket.to(roomId).emit("participant:joined", { userId });
 
-// Create uploads directory
-const uploadDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+  socket.on("signal:offer", ({ to, description }) => {
+    socket.to(roomId).emit("signal:offer", { from: userId, description });
+  });
+  socket.on("signal:answer", ({ to, description }) => {
+    socket.to(roomId).emit("signal:answer", { from: userId, description });
+  });
+  socket.on("signal:candidate", ({ candidate }) => {
+    socket.to(roomId).emit("signal:candidate", { from: userId, candidate });
+  });
+  socket.on("chat:message", ({ text }) => {
+    nsp.to(roomId).emit("chat:message", { from: userId, text, ts: Date.now() });
+  });
+  socket.on("meeting:end", async () => {
+    nsp.to(roomId).emit("meeting:ended");
+  });
 
-// ========== HEALTH CHECK ==========
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    server: 'Running',
-    port: PORT,
-    mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
+  socket.on("disconnect", () => {
+    nsp.to(roomId).emit("participant:left", { userId });
   });
 });
 
-// Test endpoint to check MongoDB
-app.get('/api/test-db', async (req, res) => {
-  try {
-    const userCount = await User.countDocuments();
-    res.json({ 
-      message: 'MongoDB is connected!', 
-      userCount: userCount,
-      status: 'success'
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📁 Upload directory: ${uploadDir}`);
-  console.log(`🍃 MongoDB Status: ${mongoose.connection.readyState === 1 ? 'Connected ✓' : 'Disconnected ✗'}\n`);
+connectDB().then(() => {
+  server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 });

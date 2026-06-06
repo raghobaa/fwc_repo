@@ -1,166 +1,211 @@
 import Interview from "../models/Interview.js";
-import User from "../models/User.js";
+import InterviewFeedback from "../models/InterviewFeedback.js";
+import mongoose from "mongoose";
 
-// Get all interviews (HR sees all, others see their own)
+const toDate = (v) => (v instanceof Date ? v : new Date(v));
+const isObjId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const overlaps = async ({ scheduledAt, duration, candidateId, interviewerIds, excludeId }) => {
+  const start = toDate(scheduledAt);
+  const end = new Date(start.getTime() + Number(duration || 60) * 60000);
+
+  const baseQuery = {
+    status: { $in: ["scheduled", "in_progress"] },
+    $expr: {
+      $lt: ["$scheduledAt", end],
+    },
+  };
+
+  const candidateQuery = {
+    ...baseQuery,
+    candidateId: new mongoose.Types.ObjectId(candidateId),
+  };
+
+  const interviewerQuery = {
+    ...baseQuery,
+    interviewerIds: { $in: interviewerIds?.map((id) => new mongoose.Types.ObjectId(id)) || [] },
+  };
+
+  if (excludeId) {
+    candidateQuery._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
+    interviewerQuery._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
+  }
+
+  // Also ensure their end time is after our start
+  const rangeFilter = { scheduledAt: { $lt: end }, };
+
+  const conflicts = await Interview.find({
+    $or: [candidateQuery, interviewerQuery],
+  });
+
+  // Further refine by checking computed end time overlap
+  const hasOverlap = conflicts.some((iv) => {
+    const ivStart = new Date(iv.scheduledAt);
+    const ivEnd = new Date(ivStart.getTime() + Number(iv.duration || 60) * 60000);
+    return ivStart < end && start < ivEnd;
+  });
+
+  return hasOverlap;
+};
+
 export const listInterviews = async (req, res) => {
   try {
-    let interviews;
-    
-    if (req.user.role === "HR" || req.user.role === "Admin") {
-      interviews = await Interview.find()
-        .populate("candidateId", "name email")
-        .populate("interviewerIds", "name email")
-        .populate("createdBy", "name");
-    } else if (req.user.role === "Candidate") {
-      interviews = await Interview.find({ candidateId: req.user._id })
-        .populate("interviewerIds", "name email");
+    const { role, _id } = req.user;
+    let filter = {};
+    if (role === "HR") {
+      // HR sees all
+      filter = {};
     } else {
-      interviews = await Interview.find({ interviewerIds: req.user._id })
-        .populate("candidateId", "name email");
+      // Others see their own
+      filter = { $or: [{ candidateId: _id }, { interviewerIds: _id }] };
     }
-    
-    res.json(interviews);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    const items = await Interview.find(filter)
+      .sort({ scheduledAt: 1 })
+      .populate("candidateId", "name email role")
+      .populate("interviewerIds", "name email role")
+      .lean();
+    res.json(items);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to list interviews", error: String(e) });
   }
 };
 
-// Get single interview
 export const getInterview = async (req, res) => {
   try {
-    const interview = await Interview.findById(req.params.id)
-      .populate("candidateId", "name email")
-      .populate("interviewerIds", "name email");
-    
-    if (!interview) {
-      return res.status(404).json({ message: "Interview not found" });
-    }
-    
-    // Check authorization
-    const isAuthorized = 
-      req.user.role === "HR" || 
-      req.user.role === "Admin" ||
-      interview.candidateId._id.toString() === req.user._id.toString() ||
-      interview.interviewerIds.some(i => i._id.toString() === req.user._id.toString());
-    
-    if (!isAuthorized) {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-    
-    res.json(interview);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    const { id } = req.params;
+    if (!isObjId(id)) return res.status(400).json({ message: "Invalid interview ID" });
+    const iv = await Interview.findById(id)
+      .populate("candidateId", "name email role")
+      .populate("interviewerIds", "name email role");
+    if (!iv) return res.status(404).json({ message: "Interview not found" });
+    res.json(iv);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to get interview", error: String(e) });
   }
 };
 
-// Get interview by room ID
 export const getInterviewByRoom = async (req, res) => {
   try {
-    const interview = await Interview.findOne({ roomId: req.params.roomId })
-      .populate("candidateId", "name email")
-      .populate("interviewerIds", "name email");
-    
-    if (!interview) {
-      return res.status(404).json({ message: "Interview not found" });
-    }
-    
-    res.json(interview);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    const { roomId } = req.params;
+    const iv = await Interview.findOne({ roomId })
+      .populate("candidateId", "name email role")
+      .populate("interviewerIds", "name email role");
+    if (!iv) return res.status(404).json({ message: "Interview not found" });
+    // authorize: HR or participant
+    const uid = req.user._id.toString();
+    const isParticipant = iv.candidateId?._id?.toString() === uid || (iv.interviewerIds || []).some((p) => p?._id?.toString() === uid);
+    const isHR = req.user.role === 'HR';
+    if (!isParticipant && !isHR) return res.status(403).json({ message: "Forbidden" });
+    res.json(iv);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to get interview by room", error: String(e) });
   }
 };
 
-// Create interview (HR only)
 export const createInterview = async (req, res) => {
   try {
-    const { title, candidateId, interviewerIds, scheduledAt, duration, roomId, notes } = req.body;
-    
-    const interview = new Interview({
+    const { title, candidateId, interviewerIds, scheduledAt, duration, notes } = req.body;
+    if (!title || !candidateId || !Array.isArray(interviewerIds) || interviewerIds.length === 0 || !scheduledAt) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    if (!isObjId(candidateId)) return res.status(400).json({ message: "Invalid candidateId" });
+    const invalidInterviewer = interviewerIds.find((x) => !isObjId(x));
+    if (invalidInterviewer) return res.status(400).json({ message: "Invalid interviewerIds" });
+
+    const roomId = `room_${new mongoose.Types.ObjectId().toString()}`;
+    const payload = {
       title,
       candidateId,
       interviewerIds,
-      scheduledAt,
-      duration,
+      scheduledAt: toDate(scheduledAt),
+      duration: Number(duration || 60),
+      status: "scheduled",
       roomId,
-      notes,
+      notes: notes || "",
       createdBy: req.user._id,
-      status: "scheduled"
-    });
-    
-    await interview.save();
-    res.status(201).json(interview);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    };
+
+    const conflict = await overlaps({ ...payload });
+    if (conflict) return res.status(409).json({ message: "Time slot overlaps for a participant" });
+
+    const iv = await Interview.create(payload);
+    res.status(201).json(iv);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to create interview", error: String(e) });
   }
 };
 
-// Update interview (HR only)
 export const updateInterview = async (req, res) => {
   try {
-    const interview = await Interview.findById(req.params.id);
-    
-    if (!interview) {
-      return res.status(404).json({ message: "Interview not found" });
+    const { id } = req.params;
+    if (!isObjId(id)) return res.status(400).json({ message: "Invalid interview ID" });
+    const { title, candidateId, interviewerIds, scheduledAt, duration, status, notes } = req.body;
+
+    const iv = await Interview.findById(id);
+    if (!iv) return res.status(404).json({ message: "Interview not found" });
+
+    if (candidateId && !isObjId(candidateId)) return res.status(400).json({ message: "Invalid candidateId" });
+    if (interviewerIds) {
+      if (!Array.isArray(interviewerIds) || interviewerIds.length === 0) return res.status(400).json({ message: "interviewerIds must be a non-empty array" });
+      const bad = interviewerIds.find((x) => !isObjId(x));
+      if (bad) return res.status(400).json({ message: "Invalid interviewerIds" });
     }
-    
-    const { title, scheduledAt, duration, notes, status } = req.body;
-    
-    if (title) interview.title = title;
-    if (scheduledAt) interview.scheduledAt = scheduledAt;
-    if (duration) interview.duration = duration;
-    if (notes) interview.notes = notes;
-    if (status) interview.status = status;
-    
-    await interview.save();
-    res.json(interview);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+
+    const updated = {
+      title: title ?? iv.title,
+      candidateId: candidateId ?? iv.candidateId,
+      interviewerIds: interviewerIds ?? iv.interviewerIds,
+      scheduledAt: scheduledAt ? toDate(scheduledAt) : iv.scheduledAt,
+      duration: duration ? Number(duration) : iv.duration,
+      status: status ?? iv.status,
+      notes: notes ?? iv.notes,
+    };
+
+    const conflict = await overlaps({ ...updated, excludeId: id });
+    if (conflict) return res.status(409).json({ message: "Time slot overlaps for a participant" });
+
+    Object.assign(iv, updated);
+    await iv.save();
+    res.json(iv);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to update interview", error: String(e) });
   }
 };
 
-// Delete/Cancel interview (HR only)
-export const deleteInterview = async (req, res) => {
+export const cancelInterview = async (req, res) => {
   try {
-    const interview = await Interview.findById(req.params.id);
-    
-    if (!interview) {
-      return res.status(404).json({ message: "Interview not found" });
-    }
-    
-    await interview.deleteOne();
-    res.json({ message: "Interview cancelled successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    const { id } = req.params;
+    if (!isObjId(id)) return res.status(400).json({ message: "Invalid interview ID" });
+    const iv = await Interview.findById(id);
+    if (!iv) return res.status(404).json({ message: "Interview not found" });
+    iv.status = "cancelled";
+    await iv.save();
+    res.json(iv);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to cancel interview", error: String(e) });
   }
 };
 
-// Alias for cancelInterview (for backward compatibility)
-export const cancelInterview = deleteInterview;
-
-// Submit feedback (HR only)
 export const submitFeedback = async (req, res) => {
   try {
-    const { interviewId, feedback, rating } = req.body;
-    
-    const interview = await Interview.findById(interviewId);
-    
-    if (!interview) {
-      return res.status(404).json({ message: "Interview not found" });
+    const { interviewId, scores, summary, recommendation } = req.body;
+    const existing = await Interview.findById(interviewId);
+    if (!existing) return res.status(404).json({ message: "Interview not found" });
+
+    const fb = await InterviewFeedback.findOneAndUpdate(
+      { interviewId, submittedBy: req.user._id },
+      { interviewId, submittedBy: req.user._id, scores: scores || {}, summary: summary || "", recommendation: recommendation || "hold" },
+      { upsert: true, new: true }
+    );
+
+    // auto-mark completed if in progress or scheduled and has feedback
+    if (existing.status !== "completed") {
+      existing.status = "completed";
+      await existing.save();
     }
-    
-    interview.notes = feedback;
-    interview.status = "completed";
-    await interview.save();
-    
-    res.json({ message: "Feedback submitted successfully", interview });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+
+    res.status(201).json(fb);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to submit feedback", error: String(e) });
   }
 };

@@ -1,12 +1,12 @@
 import os
 import json
+import time
 from datetime import datetime
 from typing import List, Dict
 
 from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
 from dotenv import load_dotenv
-
 
 from config.gemini_config import model, INTERVIEW_PROMPTS
 from tools.parser import read_text_from_file, extract_text_from_pdf
@@ -27,6 +27,29 @@ CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 # In-memory session store (simple for single-user dev use)
 SESSIONS: Dict[str, Dict] = {}
+
+
+def _gemini_generate(prompt: str, retries: int = 3, base_delay: float = 30.0) -> str:
+    """Call model.generate_content() with exponential backoff on 429 rate-limit errors."""
+    for attempt in range(retries):
+        try:
+            result = model.generate_content(prompt)
+            return (result.text or "").strip()
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower():
+                if attempt < retries - 1:
+                    wait = base_delay * (2 ** attempt)  # 30s, 60s, 120s
+                    print(f"[Gemini] Rate limit hit, retrying in {wait:.0f}s... (attempt {attempt + 1}/{retries})")
+                    time.sleep(wait)
+                else:
+                    raise RuntimeError(
+                        "Gemini API quota exceeded. Please wait a minute and try again, "
+                        "or upgrade your Google AI plan at https://ai.dev/rate-limit"
+                    ) from e
+            else:
+                raise
+    return ""
 
 
 def _extract_candidate_name(resume_text: str) -> str:
@@ -155,8 +178,7 @@ def _generate_deep_followups(job_description: str, responses: List[Dict]) -> Lis
         - Target concrete topics (e.g., Assembly on x86/ARM, SIMD (SSE/AVX/Neon), debugging with GDB/WinDbg, firmware/UEFI, Docker, Java, C/C++, Python) as applicable
         - Do NOT include any explanations, ONLY the questions
         """
-        result = model.generate_content(prompt)
-        text = (result.text or "").strip()
+        text = _gemini_generate(prompt)
         qs = []
         for line in text.split('\n'):
             s = line.strip()
@@ -292,8 +314,7 @@ def api_answer():
             response=answer_text,
             question=question
         )
-        result = model.generate_content(scoring_prompt)
-        score_text = (result.text or "").strip()
+        score_text = _gemini_generate(scoring_prompt)
     except Exception as e:
         score_text = f"Scoring error: {e}"
 
@@ -355,8 +376,7 @@ def api_finish():
         final_prompt = INTERVIEW_PROMPTS["final_evaluation"].format(
             interview_summary=interview_summary
         )
-        result = model.generate_content(final_prompt)
-        evaluation_text = (result.text or "").strip()
+        evaluation_text = _gemini_generate(final_prompt)
     except Exception as e:
         evaluation_text = f"Evaluation error: {e}"
 
@@ -573,5 +593,5 @@ UI_HTML = r"""
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5003))
+    port = int(os.getenv("PORT", 5004))
     app.run(host="0.0.0.0", port=port, debug=True)

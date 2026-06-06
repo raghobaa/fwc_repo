@@ -1,10 +1,6 @@
 import axios from "axios";
 
-let BASE = process.env.REACT_APP_API_URL || "http://localhost:5001";
-if (BASE.endsWith("/api")) {
-  BASE = BASE.slice(0, -4);
-}
-
+const BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const API = axios.create({
   baseURL: `${BASE}/api`,
   withCredentials: true,
@@ -30,5 +26,14 @@ export const getJobApplications = (jobId) => {
 };
 
 export const getAllJobs = () => API.get("/jobs");
+
+export const getTalentHeatmap = () => {
+  const token = localStorage.getItem("token");
+  return API.get("/hr/talent-heatmap", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
 
 export default API;

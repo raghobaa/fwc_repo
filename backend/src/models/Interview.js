@@ -6,7 +6,7 @@ const interviewSchema = new mongoose.Schema(
     candidateId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     interviewerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }],
     scheduledAt: { type: Date, required: true },
-    duration: { type: Number, required: true, default: 60 },
+    duration: { type: Number, required: true, default: 60 }, // minutes
     status: {
       type: String,
       enum: ["scheduled", "in_progress", "completed", "cancelled"],
@@ -23,6 +23,4 @@ const interviewSchema = new mongoose.Schema(
 interviewSchema.index({ candidateId: 1, scheduledAt: 1 });
 interviewSchema.index({ interviewerIds: 1, scheduledAt: 1 });
 
-// Make sure to export the model properly
-const Interview = mongoose.model("Interview", interviewSchema);
-export default Interview;
+export default mongoose.model("Interview", interviewSchema);

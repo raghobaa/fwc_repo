@@ -6,7 +6,7 @@ import {
   getInterviewByRoom,
   createInterview,
   updateInterview,
-  deleteInterview,
+  cancelInterview,
   submitFeedback,
 } from "../controllers/interviewController.js";
 
@@ -25,7 +25,7 @@ router.get("/room/:roomId", getInterviewByRoom);
 // HR-only operations
 router.post("/", authorizeRoles("HR"), createInterview);
 router.put("/:id", authorizeRoles("HR"), updateInterview);
-router.delete("/:id", authorizeRoles("HR"), deleteInterview);
+router.delete("/:id", authorizeRoles("HR"), cancelInterview);
 
 // HR feedback
 router.post("/feedback", authorizeRoles("HR"), submitFeedback);

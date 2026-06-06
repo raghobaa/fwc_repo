@@ -8,5 +8,5 @@ Timestamp,Name,Email,Phone number,Matching Keywords,Screening Decision
 
 2025-10-20 07:30:38,Interview Candidate,N/A,N/A,Voice Interview,NO HIRE
 2025-10-21 16:29:35,Interview Candidate,N/A,N/A,Voice Interview,NO HIRE
-2026-06-01 15:07:27,Unknown,N/A,N/A,Gemini Analysis,PASS
-2026-06-03 18:50:43,Unknown,N/A,N/A,Gemini Analysis,PASS
+2026-06-02 09:03:32,Interview Candidate,N/A,N/A,Voice Interview (Flask UI),MAYBE
+2026-06-02 13:01:09,Interview Candidate,N/A,N/A,Voice Interview (Flask UI),NO HIRE

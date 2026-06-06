@@ -1,74 +1,137 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS
+# Updated to use Gemini 1.5 Flash instead of OpenAI
+from config.gemini_config import model, INTERVIEW_PROMPTS
+from tools.parser import extract_text_from_pdf, read_text_from_file
+from tools.keyword_matcher import match_keywords
+from tools.save_data import save_candidate_data
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "http://localhost:5001"])
-
-@app.route('/')
-def home():
-    return jsonify({"message": "AI Interview Service is running!"})
-
-@app.route('/api/interview', methods=['GET'])
-def interview_status():
-    return jsonify({
-        "status": "active",
-        "message": "AI Interview Service is available",
-        "endpoints": [
-            "POST /api/interview/generate-questions",
-            "POST /api/interview/evaluate-answer",
-            "GET /api/interview"
-        ]
-    })
-
-@app.route('/api/interview/generate-questions', methods=['POST'])
-def generate_questions():
+def screen_candidate_with_gemini():
+    """Screen candidate using Gemini 1.5 Flash"""
     try:
-        data = request.json
-        language = data.get('language', 'General')
-        difficulty = data.get('difficulty', 'Medium')
+        # Extract text from resume and job description
+        resume_text = extract_text_from_pdf("assets/CV-English.pdf")
+        job_description = read_text_from_file("assets/job_description.txt")
         
-        questions = [
-            {"text": f"What is your experience with {language}?", "difficulty": difficulty},
-            {"text": f"Explain a challenging problem you solved using {language}.", "difficulty": difficulty},
-            {"text": f"What are the best practices in {language} development?", "difficulty": difficulty},
-            {"text": f"How do you handle errors in {language}?", "difficulty": difficulty},
-            {"text": f"Describe a project where you used {language}.", "difficulty": difficulty}
-        ]
+        # Create screening prompt
+        screening_prompt = f"""
+        You are a screening assistant. Evaluate whether the candidate has the skills and experience for the job.
         
-        return jsonify({"questions": questions})
+        Job Description:
+        {job_description}
+        
+        Candidate's Resume:
+        {resume_text}
+        
+        Please analyze the candidate's qualifications against the job requirements and provide:
+        1. A detailed evaluation of their skills and experience
+        2. Matching keywords found in their resume
+        3. A final decision: HIRE or PASS
+        4. Brief reasoning for your decision
+        
+        After your evaluation, end with "TERMINATE".
+        """
+        
+        # Get response from Gemini
+        result = model.generate_content(screening_prompt)
+        screening_result = result.text
+        
+        return screening_result
+        
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error in screening: {e}")
+        return "Error occurred during screening."
 
-@app.route('/api/interview/evaluate-answer', methods=['POST'])
-def evaluate_answer():
+def extract_candidate_info():
+    """Extract candidate information from resume"""
     try:
-        data = request.json
-        question = data.get('question', '')
-        answer = data.get('answer', '')
-        language = data.get('language', 'General')
+        resume_text = extract_text_from_pdf("assets/CV-English.pdf")
         
-        # Simple evaluation logic
-        score = 75
-        feedback = f"Good attempt! Your answer shows basic understanding of {language}."
-        strengths = ["Communication is clear", "Attempted to answer"]
-        weaknesses = ["Could add more examples", "More technical depth needed"]
+        # Simple extraction - in production, use more sophisticated NLP
+        lines = resume_text.split('\n')
+        candidate_name = "Unknown"
+        email = "N/A"
+        phone = "N/A"
         
-        return jsonify({
-            "score": score,
-            "feedback": feedback,
-            "strengths": strengths,
-            "weaknesses": weaknesses
-        })
+        for line in lines[:20]:  # Check first 20 lines
+            line = line.strip()
+            if '@' in line and '.' in line:
+                email = line
+            elif any(char.isdigit() for char in line) and len(line) > 7:
+                phone = line
+            elif len(line) > 2 and len(line.split()) <= 4 and not candidate_name:
+                candidate_name = line
+        
+        return candidate_name, email, phone
+        
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error extracting candidate info: {e}")
+        return "Unknown", "N/A", "N/A"
 
-if __name__ == '__main__':
-    port = 5002
-    print(f"🚀 AI Interview Service running on port {port}")
-    print(f"📍 URL: http://localhost:{port}")
-    print(f"📋 Test: http://localhost:{port}/api/interview")
-    app.run(debug=True, host='0.0.0.0', port=port)
+def generate_interview_questions(screening_result):
+    """Generate interview questions using Gemini"""
+    try:
+        interview_prompt = f"""
+        Based on the screening results below, generate 5 specific interview questions focusing on any identified skill gaps:
+        
+        {screening_result}
+        
+        Generate questions that will help assess the candidate's abilities in areas where their resume showed potential gaps.
+        Make the questions conversational and suitable for a voice interview.
+        """
+        
+        result = model.generate_content(interview_prompt)
+        return result.text
+        
+    except Exception as e:
+        print(f"Error generating questions: {e}")
+        return "Error generating interview questions."
+
+def main():
+    """Main function for text-based screening (original functionality)"""
+    print("AI Recruitment Agent - Text-based Screening")
+    print("=" * 50)
+    
+    # Screen the candidate
+    print("Screening candidate...")
+    screening_result = screen_candidate_with_gemini()
+    print("Screening Results:")
+    print(screening_result)
+    
+    # Extract candidate information
+    print("\nExtracting candidate information...")
+    candidate_name, email, phone = extract_candidate_info()
+    print(f"Candidate: {candidate_name}")
+    print(f"Email: {email}")
+    print(f"Phone: {phone}")
+    
+    # Generate interview questions
+    print("\nGenerating interview questions...")
+    interview_questions = generate_interview_questions(screening_result)
+    print("Recommended Interview Questions:")
+    print(interview_questions)
+    
+    # Save candidate data
+    print("\nSaving candidate data...")
+    try:
+        # Extract decision from screening result
+        decision = "PASS"  # Default
+        if "HIRE" in screening_result.upper():
+            decision = "HIRE"
+        
+        save_candidate_data(
+            candidate_name=candidate_name,
+            email=email,
+            phone_number=phone,
+            matching_keywords="Gemini Analysis",
+            screening_result=decision
+        )
+        print("Candidate data saved successfully!")
+        
+    except Exception as e:
+        print(f"Error saving data: {e}")
+
+if __name__ == "__main__":
+    main()

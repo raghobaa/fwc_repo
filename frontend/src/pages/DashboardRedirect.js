@@ -61,19 +61,18 @@ export default function DashboardRedirect() {
         }
       }
 
-      // ✅ Role based redirect (normalized to lowercase)
-      const normalizedRole = role ? role.toLowerCase() : "";
-      switch (normalizedRole) {
-        case "hr":
+      // ✅ Role based redirect
+      switch (role) {
+        case "HR":
           navigate("/hr");
           break;
-        case "employee":
+        case "Employee":
           navigate("/employee");
           break;
-        case "admin":
+        case "Admin":
           navigate("/admin");
           break;
-        case "candidate":
+        case "Candidate":
           navigate("/candidate");
           break;
         default:
