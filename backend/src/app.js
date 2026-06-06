@@ -1,8 +1,4 @@
-import dotenv from "dotenv";
-import { fileURLToPath as _fileURLToPath } from "url";
-import { dirname as _dirname, resolve as _resolve } from "path";
-dotenv.config({ path: _resolve(_dirname(_fileURLToPath(import.meta.url)), ".env") });
-
+import "./config/env.js";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";

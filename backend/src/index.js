@@ -1,9 +1,5 @@
 // backend/src/index.js
-import dotenv from "dotenv";
-import { fileURLToPath } from "url";
-import { dirname, resolve } from "path";
-dotenv.config({ path: resolve(dirname(fileURLToPath(import.meta.url)), ".env") });
-
+import "./config/env.js";
 import http from "http";
 import { Server as SocketIOServer } from "socket.io";
 import jwt from "jsonwebtoken";
