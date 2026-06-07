@@ -1,10 +1,9 @@
 import express from 'express';
 import { protect } from '../middlewares/authMiddleware.js';
 import { Task, DailyPlanner } from '../models/WorkAssistant.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { geminiChat } from '../utils/gemini.js';
 
 const router = express.Router();
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // ---------- Tasks ----------
 router.get('/tasks', protect, async (req, res) => {
@@ -135,12 +134,7 @@ router.post('/summarize-meeting', protect, async (req, res) => {
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-      const prompt = `Summarize the following meeting notes into a concise bullet-point summary, highlighting key decisions, action items, and next steps:\n\n${notes}`;
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const summary = response.text();
-      console.log('Generated summary:', summary.substring(0, 100));
+      const summary = await geminiChat(`Summarize the following meeting notes into a concise bullet-point summary, highlighting key decisions, action items, and next steps:\n\n${notes}`);
       res.json({ summary });
     } catch (aiErr) {
       console.error('Gemini API error:', aiErr.message);
@@ -171,12 +165,7 @@ router.post('/generate-report', protect, async (req, res) => {
 
     try {
       const tasksText = tasks.map(t => `- ${t.title} (${t.description || 'No description'})`).join('\n');
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-      const prompt = `Generate a professional work report for a ${period || 'weekly'} period. The employee completed the following tasks:\n${tasksText}\n\nWrite a concise, professional report including accomplishments, challenges (if any), and next steps.`;
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const report = response.text();
-      console.log('Generated report:', report.substring(0, 100));
+      const report = await geminiChat(`Generate a professional work report for a ${period || 'weekly'} period. The employee completed the following tasks:\n${tasksText}\n\nWrite a concise, professional report including accomplishments, challenges (if any), and next steps.`);
       res.json({ report });
     } catch (aiErr) {
       console.error('Gemini API error:', aiErr.message);

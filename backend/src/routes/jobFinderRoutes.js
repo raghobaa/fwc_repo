@@ -1,10 +1,8 @@
 import express from "express";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { protect } from "../middlewares/authMiddleware.js";
 import User from "../models/User.js";
 
 const router = express.Router();
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Sample jobs for testing
 const sampleInternalJobs = [

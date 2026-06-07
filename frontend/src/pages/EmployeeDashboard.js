@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Chatbot from "../components/Chatbot";
 import {
   LayoutDashboard, FolderGit2, Fingerprint, DollarSign, Calendar,
   MessageSquare, FileText, CheckCircle, Gift, Brain, BarChart3,
@@ -295,6 +296,7 @@ export default function EmployeeDashboard() {
           <button className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium">Contact Support →</button>
         </div>
       </div>
+      <Chatbot userRole="employee" />
     </div>
   );
 }

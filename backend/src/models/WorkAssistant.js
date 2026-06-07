@@ -28,5 +28,5 @@ const dailyPlannerSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export const Task = mongoose.models.Task || mongoose.model('Task', taskSchema);
+export const Task = mongoose.models.WorkTask || mongoose.model('WorkTask', taskSchema);
 export const DailyPlanner = mongoose.models.DailyPlanner || mongoose.model('DailyPlanner', dailyPlannerSchema);

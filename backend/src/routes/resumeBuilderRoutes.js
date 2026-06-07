@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { geminiChat } from "../utils/gemini.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
@@ -36,15 +36,6 @@ const upload = multer({
     }
   }
 });
-
-// Initialize Gemini AI
-let genAI = null;
-if (process.env.GOOGLE_API_KEY && process.env.GOOGLE_API_KEY !== 'your-gemini-api-key-here') {
-  genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-  console.log('✅ Gemini AI initialized');
-} else {
-  console.log('⚠️ Gemini AI not configured, using enhanced mock data');
-}
 
 // Helper function to extract text from PDF
 async function extractTextFromPDF(filePath) {
@@ -168,12 +159,9 @@ router.post("/generate", async (req, res) => {
       certifications: candidate.certifications || null,
     };
 
-    // Use Gemini AI to enhance resume if available
-    if (genAI) {
-      try {
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        
-        const prompt = `Enhance this resume content to be more professional and ATS-friendly. Return ONLY a JSON object with these fields: summary, education, experience, projects, skills, certifications. Keep the original meaning but improve wording and formatting.
+    // Use Gemini AI to enhance resume
+    try {
+      const prompt = `Enhance this resume content to be more professional and ATS-friendly. Return ONLY a JSON object with these fields: summary, education, experience, projects, skills, certifications. Keep the original meaning but improve wording and formatting.
 
 Original resume:
 Name: ${candidate.name}
@@ -186,19 +174,14 @@ Certifications: ${candidate.certifications || "Not provided"}
 
 Return JSON format: {"summary": "...", "education": "...", "experience": "...", "projects": "...", "skills": "...", "certifications": "..."}`;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
-        
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const enhanced = JSON.parse(jsonMatch[0]);
-          formattedResume = { ...formattedResume, ...enhanced };
-          console.log("✅ AI enhancement applied");
-        }
-      } catch (aiError) {
-        console.error("AI enhancement failed:", aiError);
+      const text = await geminiChat(prompt);
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const enhanced = JSON.parse(jsonMatch[0]);
+        formattedResume = { ...formattedResume, ...enhanced };
       }
+    } catch (aiError) {
+      console.error("AI enhancement failed:", aiError);
     }
 
     // Fill in missing fields with generated content
@@ -284,22 +267,12 @@ router.post("/analyze-ats", upload.single("resume"), async (req, res) => {
     
     overallScore = Math.min(100, Math.max(0, overallScore));
     
-    // Generate AI feedback if available
+    // Generate AI feedback
     let aiFeedback = "";
-    if (genAI) {
-      try {
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const prompt = `As an ATS (Applicant Tracking System) expert, analyze this resume and provide 2-3 sentences of actionable, specific feedback. Score: ${overallScore}%. Keep it concise and professional.
-
-Resume preview (first 1500 chars): ${resumeText.substring(0, 1500)}`;
-        
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        aiFeedback = response.text();
-        console.log("✅ AI feedback generated");
-      } catch (aiError) {
-        console.error("AI feedback generation failed:", aiError);
-      }
+    try {
+      aiFeedback = await geminiChat(`As an ATS (Applicant Tracking System) expert, analyze this resume and provide 2-3 sentences of actionable, specific feedback. Score: ${overallScore}%. Keep it concise and professional.\n\nResume preview (first 1500 chars): ${resumeText.substring(0, 1500)}`);
+    } catch (aiError) {
+      console.error("AI feedback generation failed:", aiError);
     }
     
     // Generate improvements list based on scores

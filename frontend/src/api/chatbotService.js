@@ -23,7 +23,7 @@ export const sendMessage = async (message, userRole = 'employee') => {
     };
     
     const isHrmsDataChat = ['hr', 'admin'].includes(String(userRole).toLowerCase());
-    const endpoint = isHrmsDataChat ? '/api/chatbot/hrms' : '/api/chatbot/message';
+    const endpoint = isHrmsDataChat ? '/api/chatbot/hrms' : '/api/chatbot/employee';
 
     const { data } = await axios.post(
       `${BASE_URL}${endpoint}`,

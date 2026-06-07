@@ -108,8 +108,8 @@ app.use("/api/resume-builder", resumeBuilderRoutes);
 app.use("/api/ideas", ideaRoutes);
 app.use("/api/skill-tracker", skillRoutes);
 app.use("/api/job-finder", jobFinderRoutes);
-app.use("/api/ai-work-assistant", aiWorkAssistantRoutes);
-app.use("/api/interview-analytics", interviewAnalyticsRoutes);
+app.use("/api/work-assistant", aiWorkAssistantRoutes);
+app.use("/api/interview", interviewAnalyticsRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/profile", profileRoutes);
 

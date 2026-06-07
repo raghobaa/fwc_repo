@@ -1,13 +1,11 @@
 import express from 'express';
 import { protect, authorizeRoles } from '../middlewares/authMiddleware.js';
 import Idea from '../models/Idea.js';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { geminiChat } from '../utils/gemini.js';
 import stringSimilarity from 'string-similarity';
 
 const router = express.Router();
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Helper to find duplicate ideas
 const findDuplicates = async (title, description) => {
   const existingIdeas = await Idea.find();
   for (let idea of existingIdeas) {
@@ -18,31 +16,30 @@ const findDuplicates = async (title, description) => {
   return null;
 };
 
-// Evaluate idea using Gemini AI
 const evaluateIdea = async (title, description) => {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-    const prompt = `Evaluate the following business/technical idea:
+    const prompt = `You are a strict business idea evaluator. Critically assess the following idea with high standards — most ideas should score between 30-70. Only truly exceptional ideas deserve above 80.
+
 Title: ${title}
 Description: ${description}
 
-Provide a JSON response with:
-- innovationScore: integer 0-100
-- impactScore: integer 0-100
-- feasibilityScore: integer 0-100
-- summary: brief analysis (one sentence)
-Return only valid JSON.`;
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let text = response.text();
-    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    return JSON.parse(text);
+Evaluate harshly and realistically. Penalize vague descriptions, lack of originality, poor feasibility, or low business impact.
+
+Respond with only valid JSON:
+{
+  "innovationScore": <integer 0-100>,
+  "impactScore": <integer 0-100>,
+  "feasibilityScore": <integer 0-100>,
+  "summary": "<one sentence critical assessment>"
+}`;
+    const text = await geminiChat(prompt);
+    const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    return JSON.parse(clean);
   } catch (err) {
-    // fallback scores if AI fails
     return {
-      innovationScore: Math.floor(Math.random() * 100),
-      impactScore: Math.floor(Math.random() * 100),
-      feasibilityScore: Math.floor(Math.random() * 100),
+      innovationScore: Math.floor(Math.random() * 40) + 30,
+      impactScore: Math.floor(Math.random() * 40) + 30,
+      feasibilityScore: Math.floor(Math.random() * 40) + 30,
       summary: "AI evaluation temporarily unavailable. Scores are estimated."
     };
   }

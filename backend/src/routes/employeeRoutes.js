@@ -3,9 +3,31 @@ import { protect, authorizeRoles } from "../middlewares/authMiddleware.js";
 import Attendance from "../models/Attendance.js";
 import LeaveRequest from "../models/LeaveRequest.js";
 import Feedback from "../models/Feedback.js";
-import Payroll from "../models/Payroll.js"; // ✅ Added
+import Payroll from "../models/Payroll.js";
+import Project from "../models/Project.js";
 
 const router = express.Router();
+
+/* Dashboard Stats */
+router.get("/dashboard-stats", protect, authorizeRoles("Employee"), async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const [ongoingProjects, pendingLeaves, attendanceCount, totalDays] = await Promise.all([
+      Project.countDocuments({ assignedTo: userId, status: "Active" }),
+      LeaveRequest.countDocuments({ employeeId: userId, status: "Pending" }),
+      Attendance.countDocuments({ employeeId: userId, status: "Present" }),
+      Attendance.countDocuments({ employeeId: userId }),
+    ]);
+    res.json({
+      ongoingProjects,
+      pendingTasks: pendingLeaves,
+      attendancePercentage: totalDays ? Math.round((attendanceCount / totalDays) * 100) : 0,
+      leaveBalance: 20 - (await LeaveRequest.countDocuments({ employeeId: userId, status: "Approved" })),
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch stats" });
+  }
+});
 
 /* Mark Attendance */
 router.post("/attendance", protect, authorizeRoles("Employee"), async (req, res) => {

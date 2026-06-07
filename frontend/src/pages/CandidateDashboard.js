@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Chatbot from "../components/Chatbot";
 import {
   LayoutDashboard, Target, Brain, FileText, Briefcase, 
   TrendingUp, BarChart3, Trophy, Award, Calendar, 
@@ -1135,6 +1136,7 @@ export default function CandidateDashboard() {
           </div>
         </div>
       )}
+      <Chatbot userRole="candidate" />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { spawn } from "child_process";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import axios from "axios";
 import { protect, authorizeRoles } from "../middlewares/authMiddleware.js";
 import Attendance from "../models/Attendance.js";
 import Feedback from "../models/Feedback.js";
@@ -401,6 +402,49 @@ router.post("/message", protect, async (req, res) => {
   } catch (error) {
     console.error("Chatbot error:", error);
     res.status(500).json({ error: "Server error", details: error.message });
+  }
+});
+
+/**
+ * @route   POST /api/chatbot/employee
+ * @desc    Employee/Candidate chatbot — scoped to the logged-in user's own data
+ * @access  Private
+ */
+router.post("/employee", protect, async (req, res) => {
+  const { message } = req.body;
+  if (!message?.trim()) return res.status(400).json({ error: "Message is required" });
+
+  try {
+    const userId = req.user._id;
+
+    // Fetch only this user's own data
+    const [attendance, leaves, payroll, projects, interviews, feedback] = await Promise.all([
+      Attendance.find({ employeeId: userId }).sort({ date: -1 }).limit(10).lean(),
+      LeaveRequest.find({ employeeId: userId }).sort({ createdAt: -1 }).limit(10).lean(),
+      Payroll.find({ employeeId: userId }).sort({ createdAt: -1 }).limit(6).lean(),
+      Project.find({ assignedTo: userId }).limit(10).lean(),
+      Interview.find({ candidateId: userId }).sort({ scheduledAt: -1 }).limit(5).lean(),
+      Feedback.find({ employeeId: userId }).sort({ createdAt: -1 }).limit(5).lean(),
+    ]);
+
+    const userContext = JSON.stringify(
+      { attendance, leaves, payroll, projects, interviews, feedback },
+      (key, val) => (val instanceof Date ? val.toISOString() : val)
+    );
+
+    const scopedMessage = `You are a helpful assistant for an employee named ${req.user.name}. 
+Only answer based on their personal HRMS data below. Do not reveal other employees' data.
+User data: ${userContext}
+
+Employee asks: ${message}`;
+
+    const HRBOT_URL = process.env.HRBOT_URL || "http://localhost:6000";
+    const botRes = await axios.post(`${HRBOT_URL}/chat`, { message: scopedMessage }, { timeout: 30000 });
+
+    return res.json({ response: botRes.data.response, timestamp: new Date().toISOString() });
+  } catch (err) {
+    console.error("Employee chatbot error:", err.message);
+    return res.status(500).json({ error: "Chatbot error", response: "Sorry, I encountered an error. Please try again." });
   }
 });
 
