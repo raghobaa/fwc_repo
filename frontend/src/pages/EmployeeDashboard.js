@@ -8,6 +8,7 @@ import {
   Clock, TrendingUp, Target, Zap, Crown, Camera, Edit2, Trash2,
   Plus, Building, Video, BarChart as BarChartIcon
 } from 'lucide-react';
+import AnnouncementBanner from "../components/AnnouncementBanner";
 
 export default function EmployeeDashboard() {
   const navigate = useNavigate();

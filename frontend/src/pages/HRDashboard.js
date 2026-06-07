@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { createJob } from "../api/api";
+import AnnouncementBanner from "../components/AnnouncementBanner";
 import {
   PieChart,
   Pie,
@@ -631,6 +632,8 @@ export default function HRDashboard() {
       <div className="bg-gray-100 min-h-screen p-8 pt-20 text-gray-800 font-inter flex flex-col justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-8 tracking-tight text-center">HR Dashboard</h1>
+
+          <AnnouncementBanner />
 
           {/* ── Top Stats ──────────────────────────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 max-w-[1300px] mx-auto">

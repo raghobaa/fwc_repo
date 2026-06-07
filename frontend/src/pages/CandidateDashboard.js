@@ -12,6 +12,8 @@ import {
   FolderGit2, BookOpen, Clock, Trash2, Edit, Briefcase as BriefcaseIcon,
   Video, BarChart as BarChartIcon, Activity, Target as TargetIcon
 } from 'lucide-react';
+import { getAllJobs } from "../api/api";
+import AnnouncementBanner from "../components/AnnouncementBanner";
 
 export default function CandidateDashboard() {
   const navigate = useNavigate();

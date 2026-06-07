@@ -17,6 +17,9 @@ import CandidateDashboard from "./pages/CandidateDashboard";
 
 // Admin Pages
 import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminDepartmentsPage from "./pages/AdminDepartmentsPage";
+import AdminAnnouncementsPage from "./pages/AdminAnnouncementsPage";
+import AdminPermissionsPage from "./pages/AdminPermissionsPage";
 
 // Common Pages
 import ViewApplications from "./pages/ViewApplications";
@@ -95,10 +98,25 @@ export default function App() {
                 <AdminUsersPage />
               </ProtectedRoute>
             } />
+            <Route path="/admin/departments" element={
+              <ProtectedRoute allowedRoles={["Admin"]}>
+                <AdminDepartmentsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/announcements" element={
+              <ProtectedRoute allowedRoles={["Admin"]}>
+                <AdminAnnouncementsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/permissions" element={
+              <ProtectedRoute allowedRoles={["Admin"]}>
+                <AdminPermissionsPage />
+              </ProtectedRoute>
+            } />
 
             {/* HR */}
             <Route path="/hr" element={
-              <ProtectedRoute allowedRoles={["HR"]}>
+              <ProtectedRoute allowedRoles={["HR", "Admin"]}>
                 <HRDashboard />
               </ProtectedRoute>
             } />
