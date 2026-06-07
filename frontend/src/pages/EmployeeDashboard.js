@@ -22,7 +22,7 @@ export default function EmployeeDashboard() {
     leaveBalance: 0
   });
 
-  const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+  const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5002";
 
   // Navigation menu (same style as candidate dashboard)
   const menuItems = [

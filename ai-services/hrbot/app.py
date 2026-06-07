@@ -5,15 +5,16 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pymongo import MongoClient
 import google.generativeai as genai
+from dotenv import load_dotenv
+
+# Load env variables
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
 # ─── MongoDB ───────────────────────────────────────────────────────────────────
-MONGO_URI = os.getenv(
-    "MONGO_URI",
-    
-)
+MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 db = client["hrms"]
 

@@ -134,7 +134,7 @@ export default function CandidateDashboard() {
     onboardingCount: 0
   });
 
-  const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+  const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5002";
 
   // Sample jobs as fallback
   const sampleJobs = [

@@ -13,7 +13,7 @@ export default function EmployeeProjectsPage() {
   const [selectedDocFile, setSelectedDocFile] = useState(null);
   const [selectedReportFile, setSelectedReportFile] = useState(null);
 
-  const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+  const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5002";
 
   useEffect(() => {
     fetchProjects();

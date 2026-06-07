@@ -16,7 +16,16 @@ APP_PASSWORD = os.getenv("APP_PASSWORD")
 
 # ---------------- Initialize Flask + NLP + Model ----------------
 app = Flask(__name__)
-CORS(app, origins=["https://fwc-ai-hrms-new.vercel.app"])  # Allow only your frontend origin
+CORS(
+    app,
+    origins=[
+        "https://fwc-ai-hrms-new.vercel.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+    ],
+)  # Allow frontend origins
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 nlp = spacy.load("en_core_web_sm")
@@ -220,5 +229,5 @@ def api_screen_resumes():
 # ---------------- Run App ----------------
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)
