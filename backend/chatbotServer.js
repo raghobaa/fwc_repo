@@ -35,7 +35,21 @@ const HRBOT_URL = process.env.HRBOT_URL || "http://localhost:6000";
 const MONGO_URI = process.env.MONGO_URI;
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:3000", credentials: true }));
+const allowedOrigins = [
+  process.env.CLIENT_URL || "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+];
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // ─── Chat Log Schema ──────────────────────────────────────────────────────────
@@ -97,7 +111,8 @@ app.post("/api/hr/chatbot/message", protect, requireHR, async (req, res) => {
     return res.json({ response: botResponse, timestamp: new Date().toISOString() });
   } catch (err) {
     console.error("HRBot error:", err.message);
-    return res.status(500).json({ message: "Chatbot service error", error: err.message });
+    const errorDetails = err.response?.data?.error || err.response?.data?.message || err.message;
+    return res.status(500).json({ message: "Chatbot service error", error: errorDetails });
   }
 });
 

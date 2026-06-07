@@ -44,6 +44,22 @@ import HROnboardingPage from "./pages/HROnboardingPage";
 import CandidateOnboardingPage from "./pages/CandidateOnboardingPage";
 import HRTalentHeatmapPage from "./pages/HRTalentHeatmapPage";
 
+// Candidate Pages
+import ResumeBuilderPage from "./pages/ResumeBuilderPage";
+import SkillGapAnalyzer from "./pages/SkillGapAnalyzer";
+import SmartJobFinder from "./pages/SmartJobFinder";
+import SkillTrackerPage from "./pages/SkillTrackerPage";
+import InterviewAnalyticsPage from "./pages/InterviewAnalyticsPage";
+
+// Employee Pages
+import EmployeeTasksPage from "./pages/EmployeeTasksPage";
+import AiIdeaHubPage from "./pages/AiIdeaHubPage";
+import AiWorkAssistantPage from "./pages/AiWorkAssistantPage";
+
+// Interview Pages
+import RealTimeInterview from "./pages/RealTimeInterview";
+import WrittenInterview from "./pages/WrittenInterview";
+
 function LayoutWrapper({ children }) {
   const location = useLocation();
   const hideLayout = ["/", "/register", "/setup"].includes(location.pathname);
@@ -141,6 +157,11 @@ export default function App() {
                 <HRTalentHeatmapPage />
               </ProtectedRoute>
             } />
+            <Route path="/hr/ai-ideas" element={
+              <ProtectedRoute allowedRoles={["HR", "Admin"]}>
+                <AiIdeaHubPage />
+              </ProtectedRoute>
+            } />
 
             {/* EMPLOYEE */}
             <Route path="/employee" element={
@@ -173,6 +194,21 @@ export default function App() {
                 <EmployeeProjectsPage />
               </ProtectedRoute>
             } />
+            <Route path="/employee/tasks" element={
+              <ProtectedRoute allowedRoles={["Employee"]}>
+                <EmployeeTasksPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/employee/ai-assistant" element={
+              <ProtectedRoute allowedRoles={["Employee"]}>
+                <AiWorkAssistantPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/employee/ai-ideas" element={
+              <ProtectedRoute allowedRoles={["Employee"]}>
+                <AiIdeaHubPage />
+              </ProtectedRoute>
+            } />
 
             {/* CANDIDATE */}
             <Route path="/candidate" element={
@@ -195,8 +231,35 @@ export default function App() {
                 <AiInterviewPage />
               </ProtectedRoute>
             } />
+            <Route path="/candidate/resume-builder" element={
+              <ProtectedRoute allowedRoles={["Candidate"]}>
+                <ResumeBuilderPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/candidate/skill-gap" element={
+              <ProtectedRoute allowedRoles={["Candidate"]}>
+                <SkillGapAnalyzer />
+              </ProtectedRoute>
+            } />
+            <Route path="/candidate/skill-tracker" element={
+              <ProtectedRoute allowedRoles={["Candidate"]}>
+                <SkillTrackerPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/candidate/jobs" element={
+              <ProtectedRoute allowedRoles={["Candidate"]}>
+                <SmartJobFinder />
+              </ProtectedRoute>
+            } />
+            <Route path="/candidate/interview-analytics" element={
+              <ProtectedRoute allowedRoles={["Candidate"]}>
+                <InterviewAnalyticsPage />
+              </ProtectedRoute>
+            } />
 
-            {/* SHARED */}
+            {/* SHARED / INTERVIEW */}
+            <Route path="/interview/real-time" element={<RealTimeInterview />} />
+            <Route path="/interview/written" element={<WrittenInterview />} />
             <Route path="/interview/room/:roomId" element={
               <ProtectedRoute allowedRoles={["HR", "Admin", "Candidate", "Employee"]}>
                 <InterviewRoomPage />

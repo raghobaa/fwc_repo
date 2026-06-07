@@ -20,6 +20,16 @@ import resumeRoutes from "./routes/resumeRoutes.js";
 import { protect } from "./middlewares/authMiddleware.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
+import skillGapRoutes from "./routes/skillGapRoutes.js";
+import aiInterviewRoutes from "./routes/aiInterviewRoutes.js";
+import resumeBuilderRoutes from "./routes/resumeBuilderRoutes.js";
+import ideaRoutes from "./routes/ideaRoutes.js";
+import skillRoutes from "./routes/skillRoutes.js";
+import jobFinderRoutes from "./routes/jobFinderRoutes.js";
+import aiWorkAssistantRoutes from "./routes/aiWorkAssistantRoutes.js";
+import interviewAnalyticsRoutes from "./routes/interviewAnalyticsRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
 
 const app = express();
 
@@ -32,6 +42,7 @@ const __dirname = path.dirname(__filename);
 --------------------------------------------------- */
 const allowedOrigins = [
   process.env.CLIENT_URL || "http://localhost:3000",
+  "http://127.0.0.1:3000",
   "http://localhost:3001",
   "http://localhost:3002",
 ];
@@ -91,6 +102,16 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/chatbot", chatbotRoutes); //  Chatbot route
 app.use("/api/resume", resumeRoutes); //  Resume screening route
 app.use("/api/interviews", interviewRoutes); //  Interviews scheduling routes
+app.use("/api/skill-gap", skillGapRoutes);
+app.use("/api/ai-interview", aiInterviewRoutes);
+app.use("/api/resume-builder", resumeBuilderRoutes);
+app.use("/api/ideas", ideaRoutes);
+app.use("/api/skill-tracker", skillRoutes);
+app.use("/api/job-finder", jobFinderRoutes);
+app.use("/api/ai-work-assistant", aiWorkAssistantRoutes);
+app.use("/api/interview-analytics", interviewAnalyticsRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/profile", profileRoutes);
 
 /* --------------------------------------------------
    7.  Debug Route — Check Current Logged-in User (Now uses JWT)
