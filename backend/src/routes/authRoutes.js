@@ -15,20 +15,22 @@ router.get("/verify-token", verifyToken);
 /* One-time admin setup — only works when zero Admins exist */
 router.post("/setup", setupAdmin);
 
-/* Google OAuth - Login */
+/* Google OAuth - Registration / Login */
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
 /* Google OAuth - Callback */
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "http://localhost:3000?firstTime=true" }),
+  passport.authenticate("google", { failureRedirect: `${CLIENT_URL}/?googleError=true`, session: false }),
   (req, res) => {
-    // Issue JWT after Google login
+    // Issue JWT after Google sign-in / registration
     const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
-    res.redirect(`http://localhost:3000/dashboard?token=${token}`);
+    res.redirect(`${CLIENT_URL}/dashboard?token=${token}&role=${req.user.role}`);
   }
 );
 

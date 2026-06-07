@@ -12,8 +12,8 @@ export default function AuthForms() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    if (params.get("firstTime")) {
-      setError("Please sign up with email and password first before using Google login.");
+    if (params.get("googleError")) {
+      setError("Google sign-in failed. Please try again or use email and password.");
     }
   }, [location]);
 
@@ -131,7 +131,9 @@ export default function AuthForms() {
             alt="Google"
             className="w-5 h-5"
           />
-          <span className="text-gray-700 font-medium">Continue with Google</span>
+          <span className="text-gray-700 font-medium">
+            {isLogin ? "Continue with Google" : "Sign up with Google"}
+          </span>
         </button>
 
         <p

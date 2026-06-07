@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const ROLES = ["Admin", "HR", "Employee", "Candidate"];
@@ -16,6 +16,7 @@ function authHeaders() {
 
 export default function AdminUsersPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,7 +25,7 @@ export default function AdminUsersPage() {
   const [formError, setFormError] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState("All");
+  const [filterRole, setFilterRole] = useState(location.state?.roleFilter || "All");
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);

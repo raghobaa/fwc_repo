@@ -100,7 +100,7 @@ export default function App() {
 
             {/* HR */}
             <Route path="/hr" element={
-              <ProtectedRoute allowedRoles={["HR"]}>
+              <ProtectedRoute allowedRoles={["HR", "Admin"]}>
                 <HRDashboard />
               </ProtectedRoute>
             } />

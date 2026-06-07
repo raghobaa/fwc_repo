@@ -62,9 +62,9 @@ export default function AdminDashboard() {
 
   /* ── Feature 1: Stat cards ────────────────────────────────────────────────── */
   const statCards = [
-    { label: "Total Employees", value: stats?.employees, icon: "👥", color: "bg-blue-50 text-blue-700", border: "border-blue-200", onClick: () => navigate("/admin/users") },
-    { label: "HR Users", value: stats?.hrUsers, icon: "🧑‍💼", color: "bg-purple-50 text-purple-700", border: "border-purple-200", onClick: () => navigate("/admin/users") },
-    { label: "Active Candidates", value: stats?.candidates, icon: "🎯", color: "bg-yellow-50 text-yellow-700", border: "border-yellow-200", onClick: () => navigate("/admin/users") },
+    { label: "Total Employees", value: stats?.employees, icon: "👥", color: "bg-blue-50 text-blue-700", border: "border-blue-200", onClick: () => navigate("/admin/users", { state: { roleFilter: "Employee" } }) },
+    { label: "HR Users", value: stats?.hrUsers, icon: "🧑‍💼", color: "bg-purple-50 text-purple-700", border: "border-purple-200", onClick: () => navigate("/admin/users", { state: { roleFilter: "HR" } }) },
+    { label: "Active Candidates", value: stats?.candidates, icon: "🎯", color: "bg-yellow-50 text-yellow-700", border: "border-yellow-200", onClick: () => navigate("/admin/users", { state: { roleFilter: "Candidate" } }) },
     { label: "Open Job Positions", value: stats?.openJobs, icon: "💼", color: "bg-green-50 text-green-700", border: "border-green-200", onClick: () => navigate("/hr/applications") },
     { label: "Departments", value: stats?.departments, icon: "🏢", color: "bg-red-50 text-red-700", border: "border-red-200", onClick: () => navigate("/admin/departments") },
   ];
