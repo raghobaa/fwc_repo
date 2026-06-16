@@ -1,257 +1,257 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Flag, CheckCircle, Clock, AlertCircle, TrendingUp, ChevronRight } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Calendar, X, ChevronRight, ListChecks } from 'lucide-react';
+
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5002';
+
+const PRIORITY = {
+  high:   { label: 'HIGH',   cls: 'bg-red-100 text-red-700'     },
+  medium: { label: 'MED',    cls: 'bg-yellow-100 text-yellow-700' },
+  low:    { label: 'LOW',    cls: 'bg-green-100 text-green-700'  },
+};
+
+const STATUS = {
+  'pending':     { label: 'Pending',     cls: 'bg-gray-100 text-gray-600',   icon: <Clock className="h-3.5 w-3.5" />        },
+  'in-progress': { label: 'In Progress', cls: 'bg-blue-100 text-blue-700',   icon: <AlertCircle className="h-3.5 w-3.5" />  },
+  'completed':   { label: 'Completed',   cls: 'bg-green-100 text-green-700', icon: <CheckCircle className="h-3.5 w-3.5" /> },
+};
+
+const dummyTask = {
+  _id: 'dummy-task-001',
+  title: 'Complete Project Documentation',
+  description: 'Prepare and finalize the technical documentation for the HRMS project.',
+  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  priority: 'high',
+  status: 'pending',
+  progress: 0,
+  assignedByName: 'HR Manager (Demo)',
+};
 
 export default function EmployeeTasksPage() {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ total: 0, pending: 0, completed: 0, inProgress: 0 });
+  const [tasks, setTasks]               = useState([]);
+  const [loading, setLoading]           = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
-  const [updating, setUpdating] = useState(false);
+  const [updating, setUpdating]         = useState(false);
 
-  const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-  // Dummy task (frontend-only, for demonstration)
-  const dummyTask = {
-    _id: 'dummy-task-001',
-    title: '📄 Complete Project Documentation',
-    description: 'Prepare and finalize the technical documentation for the HRMS project.',
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    priority: 'high',
-    status: 'pending',
-    progress: 0,
-    assignedByName: 'HR Manager (Demo)'
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  useEffect(() => { fetchTasks(); }, []);
 
   const fetchTasks = async () => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${BASE_URL}/api/tasks/my-tasks`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.length === 0) {
-          // No real tasks → use dummy task for UI demonstration
-          setTasks([dummyTask]);
-        } else {
-          setTasks(data);
-        }
-        calculateStats(data.length === 0 ? [dummyTask] : data);
+        setTasks(data.length === 0 ? [dummyTask] : data);
       } else {
-        // On error, still show dummy task
         setTasks([dummyTask]);
-        calculateStats([dummyTask]);
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       setTasks([dummyTask]);
-      calculateStats([dummyTask]);
     } finally {
       setLoading(false);
     }
   };
 
-  const calculateStats = (taskList) => {
-    const total = taskList.length;
-    const pending = taskList.filter(t => t.status === 'pending').length;
-    const inProgress = taskList.filter(t => t.status === 'in-progress').length;
-    const completed = taskList.filter(t => t.status === 'completed').length;
-    setStats({ total, pending, inProgress, completed });
-  };
-
   const updateTask = async (taskId, updates) => {
     setUpdating(true);
-    // If it's the dummy task, update locally only
     if (taskId === 'dummy-task-001') {
-      setTasks(prevTasks =>
-        prevTasks.map(t =>
-          t._id === taskId ? { ...t, ...updates } : t
-        )
-      );
-      if (selectedTask?._id === taskId) {
-        setSelectedTask(prev => ({ ...prev, ...updates }));
-      }
-      calculateStats(tasks.map(t => t._id === taskId ? { ...t, ...updates } : t));
+      const updated = tasks.map(t => t._id === taskId ? { ...t, ...updates } : t);
+      setTasks(updated);
+      if (selectedTask?._id === taskId) setSelectedTask(prev => ({ ...prev, ...updates }));
       setUpdating(false);
       return;
     }
-
-    // Real task: send to backend
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${BASE_URL}/api/tasks/my-tasks/${taskId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(updates)
+        body: JSON.stringify(updates),
       });
       if (res.ok) {
         await fetchTasks();
-        if (selectedTask?._id === taskId) {
-          const updated = await res.json();
-          setSelectedTask(updated);
-        }
-      } else {
-        alert('Update failed');
+        if (selectedTask?._id === taskId) setSelectedTask(prev => ({ ...prev, ...updates }));
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setUpdating(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setUpdating(false); }
   };
 
-  const getPriorityBadge = (priority) => {
-    const styles = {
-      high: 'bg-red-100 text-red-700 border-red-200',
-      medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      low: 'bg-green-100 text-green-700 border-green-200'
-    };
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[priority]}`}>{priority.toUpperCase()}</span>;
-  };
+  const total      = tasks.length;
+  const pending    = tasks.filter(t => t.status === 'pending').length;
+  const inProgress = tasks.filter(t => t.status === 'in-progress').length;
+  const completed  = tasks.filter(t => t.status === 'completed').length;
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      pending: 'bg-gray-100 text-gray-700',
-      'in-progress': 'bg-blue-100 text-blue-700',
-      completed: 'bg-green-100 text-green-700'
-    };
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}>{status.replace('-', ' ').toUpperCase()}</span>;
-  };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
+  if (loading) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* === New Heading: Task Management (White/Blue) === */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 mb-6 text-white shadow-lg">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <CheckCircle className="h-8 w-8" />
-            Task Management
-          </h1>
-          <p className="text-blue-100 mt-1">Track, prioritize, and complete your daily tasks</p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-5xl mx-auto px-8 pt-20 pb-10">
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow p-4 border-l-4 border-blue-500">
-            <p className="text-sm text-gray-500">Total Tasks</p>
-            <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 border-l-4 border-yellow-500">
-            <p className="text-sm text-gray-500">Pending</p>
-            <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 border-l-4 border-blue-400">
-            <p className="text-sm text-gray-500">In Progress</p>
-            <p className="text-2xl font-bold text-blue-400">{stats.inProgress}</p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 border-l-4 border-green-500">
-            <p className="text-sm text-gray-500">Completed</p>
-            <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-          </div>
-        </div>
+        {/* Title */}
+        <h1 className="text-3xl font-bold text-gray-900">Task Management</h1>
+        <p className="text-gray-500 text-sm mt-1">Track, prioritize, and complete your daily tasks</p>
 
-        {/* Tasks List */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Title</th>
-                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Due Date</th>
-                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Priority</th>
-                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Status</th>
-                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Progress</th>
-                  <th className="p-3 text-left text-sm font-semibold text-gray-600">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tasks.length === 0 ? (
-                  <tr><td colSpan="6" className="p-8 text-center text-gray-500">No tasks assigned yet. (Add dummy task not shown?)</td></tr>
-                ) : (
-                  tasks.map(task => (
-                    <tr key={task._id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedTask(task)}>
-                      <td className="p-3 text-sm font-medium">{task.title}</td>
-                      <td className="p-3 text-sm">{new Date(task.dueDate).toLocaleDateString()}</td>
-                      <td className="p-3 text-sm">{getPriorityBadge(task.priority)}</td>
-                      <td className="p-3 text-sm">{getStatusBadge(task.status)}</td>
-                      <td className="p-3 text-sm">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${task.progress}%` }}></div>
-                        </div>
-                        <span className="text-xs ml-2">{task.progress}%</span>
-                      </td>
-                      <td className="p-3 text-sm">
-                        <button className="text-blue-600 hover:text-blue-800" onClick={(e) => { e.stopPropagation(); setSelectedTask(task); }}>View Details</button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 mb-8">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <ListChecks className="h-5 w-5 text-blue-500 mb-2" />
+            <p className="text-2xl font-bold text-gray-900">{total}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Total Tasks</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <Clock className="h-5 w-5 text-yellow-500 mb-2" />
+            <p className="text-2xl font-bold text-gray-900">{pending}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Pending</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <AlertCircle className="h-5 w-5 text-blue-400 mb-2" />
+            <p className="text-2xl font-bold text-gray-900">{inProgress}</p>
+            <p className="text-xs text-gray-500 mt-0.5">In Progress</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <CheckCircle className="h-5 w-5 text-green-500 mb-2" />
+            <p className="text-2xl font-bold text-gray-900">{completed}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Completed</p>
           </div>
         </div>
 
-        {/* Task Details Modal */}
-        {selectedTask && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">{selectedTask.title}</h2>
-                <button onClick={() => setSelectedTask(null)} className="text-gray-500 hover:text-gray-700">✕</button>
-              </div>
-              <div className="space-y-3">
-                <p className="text-gray-600 text-sm">{selectedTask.description || 'No description'}</p>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Due Date:</span>
-                  <span>{new Date(selectedTask.dueDate).toLocaleDateString()}</span>
+        {/* Task list */}
+        {tasks.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+            <ListChecks className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">No tasks assigned yet</p>
+            <p className="text-sm text-gray-400 mt-1">Your manager will assign tasks to you soon.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {tasks.map(task => {
+              const prio = PRIORITY[task.priority] || PRIORITY.medium;
+              const stat = STATUS[task.status]     || STATUS.pending;
+              const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+              const pct = task.progress || 0;
+              return (
+                <div
+                  key={task._id}
+                  onClick={() => setSelectedTask(task)}
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4 cursor-pointer hover:shadow-md hover:border-gray-200 transition group"
+                >
+                  {/* Status icon */}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.cls}`}>
+                    {stat.icon}
+                  </div>
+
+                  {/* Main info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition">{task.title}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className={`inline-flex items-center gap-1 text-xs ${isOverdue ? 'text-red-500' : 'text-gray-400'}`}>
+                        <Calendar className="h-3 w-3" />
+                        {new Date(task.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {isOverdue && ' · Overdue'}
+                      </span>
+                      {task.assignedByName && (
+                        <span className="text-xs text-gray-400">by {task.assignedByName}</span>
+                      )}
+                    </div>
+                    {/* Progress bar */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${pct >= 80 ? 'bg-green-500' : pct >= 40 ? 'bg-blue-500' : 'bg-yellow-400'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
+                    </div>
+                  </div>
+
+                  {/* Badges */}
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${prio.cls}`}>{prio.label}</span>
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${stat.cls}`}>
+                      {stat.label}
+                    </span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Priority:</span>
-                  <span>{getPriorityBadge(selectedTask.priority)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Assigned by:</span>
-                  <span>{selectedTask.assignedByName}</span>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Status</label>
-                  <select
-                    value={selectedTask.status}
-                    onChange={(e) => updateTask(selectedTask._id, { status: e.target.value })}
-                    className="w-full border rounded p-2"
-                    disabled={updating}
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Progress: {selectedTask.progress}%</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={selectedTask.progress}
-                    onChange={(e) => updateTask(selectedTask._id, { progress: parseInt(e.target.value) })}
-                    className="w-full"
-                    disabled={updating}
-                  />
-                </div>
-              </div>
-              <div className="mt-6 flex gap-2">
-                <button onClick={() => setSelectedTask(null)} className="flex-1 bg-gray-200 py-2 rounded-lg">Close</button>
-              </div>
-            </div>
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* Detail modal */}
+      {selectedTask && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{selectedTask.title}</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Assigned by {selectedTask.assignedByName || '—'}</p>
+              </div>
+              <button onClick={() => setSelectedTask(null)} className="p-1.5 hover:bg-gray-100 rounded-xl transition">
+                <X className="h-4 w-4 text-gray-500" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-5 leading-relaxed">{selectedTask.description || 'No description provided.'}</p>
+
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400 mb-0.5">Due Date</p>
+                <p className="text-sm font-semibold text-gray-800">{new Date(selectedTask.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400 mb-0.5">Priority</p>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${PRIORITY[selectedTask.priority]?.cls}`}>
+                  {PRIORITY[selectedTask.priority]?.label}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Status</label>
+                <select
+                  value={selectedTask.status}
+                  onChange={e => updateTask(selectedTask._id, { status: e.target.value })}
+                  disabled={updating}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+              <div>
+                <div className="flex justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Progress</label>
+                  <span className="text-xs font-bold text-blue-600">{selectedTask.progress}%</span>
+                </div>
+                <input
+                  type="range" min="0" max="100"
+                  value={selectedTask.progress}
+                  onChange={e => updateTask(selectedTask._id, { progress: parseInt(e.target.value) })}
+                  disabled={updating}
+                  className="w-full accent-blue-600"
+                />
+                <div className="h-2 bg-gray-100 rounded-full mt-1 overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${selectedTask.progress}%` }} />
+                </div>
+              </div>
+            </div>
+
+            <button onClick={() => setSelectedTask(null)} className="mt-5 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-medium transition">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

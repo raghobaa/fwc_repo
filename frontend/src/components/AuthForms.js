@@ -258,14 +258,6 @@ function LoginRegisterForm() {
               A unified command centre to hire, engage, pay, and grow your entire workforce — built for scale.
             </p>
 
-            <div className="flex gap-6 bg-white/10 backdrop-blur-sm rounded-2xl p-4 w-fit">
-              <div><div className="text-2xl font-bold">12K+</div><div className="text-xs text-blue-200">Employees Managed</div></div>
-              <div className="border-l border-white/20"></div>
-              <div><div className="text-2xl font-bold">98%</div><div className="text-xs text-blue-200">Uptime SLA</div></div>
-              <div className="border-l border-white/20"></div>
-              <div><div className="text-2xl font-bold">SOC2</div><div className="text-xs text-blue-200">Certified</div></div>
-            </div>
-
             <div className="flex flex-wrap gap-2">
               {["Real-time Payroll", "Smart Reports", "Team Hub", "AI Insights", "Compliance"].map(tag => (
                 <span key={tag} className="bg-white/10 rounded-full px-3 py-1 text-xs flex items-center gap-1">

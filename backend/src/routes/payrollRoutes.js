@@ -91,7 +91,7 @@ router.patch("/release", protect, authorizeRoles("HR", "Admin"), async (req, res
 router.get("/employee", protect, authorizeRoles("Employee"), async (req, res) => {
   try {
     const employeeId = req.user._id;
-    const records = await Payroll.find({ employeeId, status: "Released" }).sort({ createdAt: -1 });
+    const records = await Payroll.find({ employeeId, status: { $in: ["Released", "Approved"] } }).sort({ createdAt: -1 });
     res.json(records);
   } catch (error) {
     console.error("Employee payroll fetch error:", error);

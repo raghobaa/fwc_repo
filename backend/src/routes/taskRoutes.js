@@ -1,24 +1,9 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import { protect, authorizeRoles } from '../middlewares/authMiddleware.js';
+import Task from '../models/Task.js';
 
 const router = express.Router();
-
-// ---------- Task Model ----------
-const taskSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: { type: String },
-  dueDate: { type: Date, required: true },
-  priority: { type: String, enum: ['high', 'medium', 'low'], default: 'medium' },
-  status: { type: String, enum: ['pending', 'in-progress', 'completed'], default: 'pending' },
-  progress: { type: Number, default: 0, min: 0, max: 100 },
-  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  assignedToName: { type: String },
-  assignedByName: { type: String },
-}, { timestamps: true });
-
-const Task = mongoose.models.Task || mongoose.model('Task', taskSchema);
 
 // ---------- Helper to get user name (for creating tasks) ----------
 const getUserName = async (userId) => {

@@ -76,19 +76,7 @@ export default function EmployeeDashboard() {
         const data = await profileRes.json();
         setProfile(data);
       } else {
-        // Demo fallback (remove in production)
-        setProfile({
-          name: "John Doe",
-          email: "john@example.com",
-          phone: "+91 9876543210",
-          designation: "Software Engineer",
-          department: "Engineering",
-          location: "Bangalore",
-          experienceYears: 3,
-          skills: ["React", "Node.js", "Python"],
-          certifications: ["AWS Certified"],
-          avatar: ""
-        });
+        setProfile(null);
       }
 
       // Fetch stats
@@ -101,6 +89,7 @@ export default function EmployeeDashboard() {
       } else {
         setStats({ ongoingProjects: 0, pendingTasks: 0, attendancePercentage: 0, leaveBalance: 0 });
       }
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -236,8 +225,8 @@ export default function EmployeeDashboard() {
                   <CheckCircle className="h-8 w-8 text-blue-200" />
                   <span className="text-xs text-blue-200 bg-white/20 px-2 py-1 rounded-full">Pending</span>
                 </div>
-                <p className="text-3xl font-bold mt-2">{stats.pendingProjects}</p>
-                <p className="text-sm text-blue-100 mt-1">Pending Projects</p>
+                <p className="text-3xl font-bold mt-2">{stats.pendingTasks}</p>
+                <p className="text-sm text-blue-100 mt-1">Pending Tasks</p>
               </div>
               <div className="bg-white/15 backdrop-blur rounded-2xl p-4 border border-white/20">
                 <div className="flex items-center justify-between mb-2">
@@ -245,7 +234,7 @@ export default function EmployeeDashboard() {
                   <span className="text-xs text-blue-200 bg-white/20 px-2 py-1 rounded-full">This Month</span>
                 </div>
                 <p className="text-3xl font-bold mt-2">{stats.attendancePercentage}%</p>
-                <p className="text-sm text-blue-100 mt-1">Today's Attendance Status</p>
+                <p className="text-sm text-blue-100 mt-1">Attendance Rate</p>
               </div>
               <div className="bg-white/15 backdrop-blur rounded-2xl p-4 border border-white/20">
                 <div className="flex items-center justify-between mb-2">
@@ -253,7 +242,7 @@ export default function EmployeeDashboard() {
                   <span className="text-xs text-blue-200 bg-white/20 px-2 py-1 rounded-full">Available</span>
                 </div>
                 <p className="text-3xl font-bold mt-2">{stats.leaveBalance}</p>
-                <p className="text-sm text-blue-100 mt-1">Employees on Leave</p>
+                <p className="text-sm text-blue-100 mt-1">Leave Balance</p>
               </div>
             </div>
           </div>

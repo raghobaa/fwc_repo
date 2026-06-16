@@ -120,7 +120,7 @@ router.put('/:id/status', protect, authorizeRoles('HR', 'Admin'), async (req, re
 });
 
 // Employee deletes their own idea (only if pending)
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', protect, authorizeRoles('Employee', 'Admin'), async (req, res) => {
   try {
     const idea = await Idea.findById(req.params.id);
     if (!idea) return res.status(404).json({ message: 'Idea not found' });

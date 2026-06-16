@@ -5,27 +5,88 @@ import LeaveRequest from "../models/LeaveRequest.js";
 import Feedback from "../models/Feedback.js";
 import Payroll from "../models/Payroll.js";
 import Project from "../models/Project.js";
+import User from "../models/User.js";
+import Task from "../models/Task.js";
+
+const MAX_LEAVE_DAYS = 20;
 
 const router = express.Router();
+
+/* Employee Profile */
+router.get("/profile", protect, authorizeRoles("Employee"), async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch profile" });
+  }
+});
 
 /* Dashboard Stats */
 router.get("/dashboard-stats", protect, authorizeRoles("Employee"), async (req, res) => {
   try {
     const userId = req.user._id;
-    const [ongoingProjects, pendingLeaves, attendanceCount, totalDays] = await Promise.all([
-      Project.countDocuments({ assignedTo: userId, status: "Active" }),
-      LeaveRequest.countDocuments({ employeeId: userId, status: "Pending" }),
-      Attendance.countDocuments({ employeeId: userId, status: "Present" }),
-      Attendance.countDocuments({ employeeId: userId }),
+
+    // Current month window for attendance rate
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const [ongoingProjects, pendingTasks, presentThisMonth, approvedLeaves] = await Promise.all([
+      Project.countDocuments({ assignedTo: userId, status: { $in: ["active", "Active", "ongoing", "Ongoing"] } }),
+      Task.countDocuments({ assignedTo: userId, status: { $in: ["pending", "in-progress"] } }),
+      Attendance.countDocuments({ employeeId: userId, status: "Present", date: { $gte: monthStart, $lte: today } }),
+      LeaveRequest.countDocuments({ employeeId: userId, status: "Approved" }),
     ]);
-    res.json({
-      ongoingProjects,
-      pendingTasks: pendingLeaves,
-      attendancePercentage: totalDays ? Math.round((attendanceCount / totalDays) * 100) : 0,
-      leaveBalance: 20 - (await LeaveRequest.countDocuments({ employeeId: userId, status: "Approved" })),
-    });
+
+    const daysElapsed = now.getDate(); // days into current month
+    const attendancePercentage = daysElapsed ? Math.round((presentThisMonth / daysElapsed) * 100) : 0;
+    const leaveBalance = Math.max(0, MAX_LEAVE_DAYS - approvedLeaves);
+
+    res.json({ ongoingProjects, pendingTasks, attendancePercentage, leaveBalance });
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch stats" });
+  }
+});
+
+/* Get Attendance History + today's status */
+router.get("/attendance", protect, authorizeRoles("Employee"), async (req, res) => {
+  try {
+    const employeeId = req.user._id;
+
+    // Today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Current month range
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const monthEnd   = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const [markedToday, monthRecords, totalRecords] = await Promise.all([
+      Attendance.findOne({ employeeId, date: today }),
+      Attendance.find({ employeeId, date: { $gte: monthStart, $lte: monthEnd } }).sort({ date: 1 }),
+      Attendance.countDocuments({ employeeId }),
+    ]);
+
+    const presentThisMonth = monthRecords.filter(r => r.status === "Present").length;
+    const workingDaysThisMonth = today.getDate(); // days elapsed in month
+    const attendancePct = workingDaysThisMonth
+      ? Math.round((presentThisMonth / workingDaysThisMonth) * 100)
+      : 0;
+
+    res.json({
+      markedToday: !!markedToday,
+      todayStatus: markedToday?.status || null,
+      presentThisMonth,
+      absentThisMonth: workingDaysThisMonth - presentThisMonth,
+      workingDaysThisMonth,
+      attendancePct,
+      totalPresent: totalRecords,
+      records: monthRecords,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch attendance" });
   }
 });
 
@@ -122,6 +183,40 @@ router.get("/payroll", protect, authorizeRoles("Employee"), async (req, res) => 
   } catch (err) {
     console.error("Employee payroll fetch error:", err);
     res.status(500).json({ message: "Failed to fetch payroll" });
+  }
+});
+
+/* Promotion Eligibility */
+router.get("/promotion-eligibility", protect, authorizeRoles("Employee"), async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const [attendanceCount, totalDays, approvedLeaves, pendingLeaves] = await Promise.all([
+      Attendance.countDocuments({ employeeId: userId, status: "Present" }),
+      Attendance.countDocuments({ employeeId: userId }),
+      LeaveRequest.countDocuments({ employeeId: userId, status: "Approved" }),
+      LeaveRequest.countDocuments({ employeeId: userId, status: "Pending" }),
+    ]);
+
+    const attendancePct = totalDays ? Math.round((attendanceCount / totalDays) * 100) : 0;
+    const activeProjects = await Project.countDocuments({ assignedTo: userId, status: "Active" });
+    const completedProjects = await Project.countDocuments({ assignedTo: userId, status: "Completed" });
+
+    const criteria = [
+      { label: "Attendance Rate", current: `${attendancePct}%`, target: "85%", met: attendancePct >= 85 },
+      { label: "Completed Projects", current: completedProjects, target: 3, met: completedProjects >= 3 },
+      { label: "Approved Leaves Within Limit", current: approvedLeaves, target: "≤ 10", met: approvedLeaves <= 10 },
+      { label: "Active Projects", current: activeProjects, target: "≥ 1", met: activeProjects >= 1 },
+    ];
+
+    const metCount = criteria.filter(c => c.met).length;
+    const eligible = metCount === criteria.length;
+    const score = Math.round((metCount / criteria.length) * 100);
+
+    res.json({ eligible, score, metCount, totalCriteria: criteria.length, criteria, attendancePct, completedProjects, activeProjects });
+  } catch (err) {
+    console.error("Promotion eligibility error:", err);
+    res.status(500).json({ message: "Failed to fetch promotion eligibility" });
   }
 });
 

@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard, Users, Building2, Megaphone, ShieldCheck, Briefcase,
+  ClipboardList, Bell, Search, Menu, X, LogOut, Camera, Zap, ChevronRight,
+  UserPlus, Trash2, RefreshCw, CheckCircle, XCircle, Edit, DollarSign,
+  Target, UserCheck, Pin
+} from 'lucide-react';
 
 const BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -17,24 +23,25 @@ function timeAgo(dateStr) {
 }
 
 const ACTIVITY_ICONS = {
-  USER_CREATED: "👤",
-  USER_DELETED: "🗑️",
-  USER_ROLE_CHANGED: "🔄",
-  JOB_CREATED: "💼",
-  LEAVE_APPROVED: "✅",
-  LEAVE_REJECTED: "❌",
-  ANNOUNCEMENT_CREATED: "📢",
-  ANNOUNCEMENT_DELETED: "🗑️",
-  DEPARTMENT_CREATED: "🏢",
-  DEPARTMENT_UPDATED: "✏️",
-  DEPARTMENT_DELETED: "🗑️",
-  EMPLOYEE_CREATED: "👥",
-  PAYROLL_GENERATED: "💰",
+  USER_CREATED:        <UserPlus   className="h-4 w-4 text-blue-500"   />,
+  USER_DELETED:        <Trash2     className="h-4 w-4 text-red-500"    />,
+  USER_ROLE_CHANGED:   <RefreshCw  className="h-4 w-4 text-purple-500" />,
+  JOB_CREATED:         <Briefcase  className="h-4 w-4 text-green-500"  />,
+  LEAVE_APPROVED:      <CheckCircle className="h-4 w-4 text-green-500" />,
+  LEAVE_REJECTED:      <XCircle    className="h-4 w-4 text-red-500"    />,
+  ANNOUNCEMENT_CREATED:<Megaphone  className="h-4 w-4 text-blue-500"   />,
+  ANNOUNCEMENT_DELETED:<Trash2     className="h-4 w-4 text-red-500"    />,
+  DEPARTMENT_CREATED:  <Building2  className="h-4 w-4 text-indigo-500" />,
+  DEPARTMENT_UPDATED:  <Edit       className="h-4 w-4 text-yellow-500" />,
+  DEPARTMENT_DELETED:  <Trash2     className="h-4 w-4 text-red-500"    />,
+  EMPLOYEE_CREATED:    <Users      className="h-4 w-4 text-blue-500"   />,
+  PAYROLL_GENERATED:   <DollarSign className="h-4 w-4 text-green-500"  />,
 };
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [stats, setStats] = useState(null);
   const [activity, setActivity] = useState([]);
@@ -60,76 +67,203 @@ export default function AdminDashboard() {
     fetchActivity();
   }, [fetchStats, fetchActivity]);
 
-  /* ── Feature 1: Stat cards ────────────────────────────────────────────────── */
-  const statCards = [
-    { label: "Total Employees", value: stats?.employees, icon: "👥", color: "bg-blue-50 text-blue-700", border: "border-blue-200", onClick: () => navigate("/admin/users", { state: { roleFilter: "Employee" } }) },
-    { label: "HR Users", value: stats?.hrUsers, icon: "🧑‍💼", color: "bg-purple-50 text-purple-700", border: "border-purple-200", onClick: () => navigate("/admin/users", { state: { roleFilter: "HR" } }) },
-    { label: "Active Candidates", value: stats?.candidates, icon: "🎯", color: "bg-yellow-50 text-yellow-700", border: "border-yellow-200", onClick: () => navigate("/admin/users", { state: { roleFilter: "Candidate" } }) },
-    { label: "Open Job Positions", value: stats?.openJobs, icon: "💼", color: "bg-green-50 text-green-700", border: "border-green-200", onClick: () => navigate("/hr/applications") },
-    { label: "Departments", value: stats?.departments, icon: "🏢", color: "bg-red-50 text-red-700", border: "border-red-200", onClick: () => navigate("/admin/departments") },
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
+
+  /* ── Sidebar navigation ───────────────────────────────────────────────── */
+  const menuItems = [
+    { name: "Dashboard",        icon: <LayoutDashboard className="h-5 w-5" />, path: "/admin" },
+    { name: "User Management",  icon: <Users           className="h-5 w-5" />, path: "/admin/users" },
+    { name: "Departments",      icon: <Building2       className="h-5 w-5" />, path: "/admin/departments" },
+    { name: "Announcements",    icon: <Megaphone       className="h-5 w-5" />, path: "/admin/announcements" },
+    { name: "Role & Permissions", icon: <ShieldCheck   className="h-5 w-5" />, path: "/admin/permissions" },
+    { name: "HR Dashboard",     icon: <Briefcase       className="h-5 w-5" />, path: "/hr" },
+    { name: "Recruitment",      icon: <ClipboardList   className="h-5 w-5" />, path: "/hr/applications" },
   ];
 
-  /* ── Feature cards (navigation) ──────────────────────────────────────────── */
+  /* ── Stat cards ───────────────────────────────────────────────────────── */
+  const statCards = [
+    { label: "Total Employees",    value: stats?.employees,  icon: <Users       className="h-8 w-8 text-blue-200" />, badge: "Staff",      onClick: () => navigate("/admin/users", { state: { roleFilter: "Employee" } }) },
+    { label: "HR Users",           value: stats?.hrUsers,    icon: <UserCheck   className="h-8 w-8 text-blue-200" />, badge: "HR",         onClick: () => navigate("/admin/users", { state: { roleFilter: "HR" } }) },
+    { label: "Active Candidates",  value: stats?.candidates, icon: <Target      className="h-8 w-8 text-blue-200" />, badge: "Candidates", onClick: () => navigate("/admin/users", { state: { roleFilter: "Candidate" } }) },
+    { label: "Open Job Positions", value: stats?.openJobs,   icon: <Briefcase   className="h-8 w-8 text-blue-200" />, badge: "Open",       onClick: () => navigate("/hr/applications") },
+    { label: "Departments",        value: stats?.departments, icon: <Building2  className="h-8 w-8 text-blue-200" />, badge: "Teams",      onClick: () => navigate("/admin/departments") },
+  ];
+
+  /* ── Quick access cards ───────────────────────────────────────────────── */
   const navCards = [
-    { title: "User Management", description: "Create and manage Admin, HR, Employee and Candidate accounts. Assign roles.", action: () => navigate("/admin/users"), badge: "Core", badgeColor: "bg-red-100 text-red-700" },
-    { title: "Departments", description: "Create departments, assign HR heads, and track team structure.", action: () => navigate("/admin/departments"), badge: "Structure", badgeColor: "bg-purple-100 text-purple-700" },
-    { title: "Announcements", description: "Post company-wide notices visible to all employees and candidates.", action: () => navigate("/admin/announcements"), badge: "Comms", badgeColor: "bg-blue-100 text-blue-700" },
-    { title: "Role & Permissions", description: "View the read-only permission matrix showing what each role can access.", action: () => navigate("/admin/permissions"), badge: "Security", badgeColor: "bg-green-100 text-green-700" },
-    { title: "HR Dashboard", description: "Access all HR tools — attendance, leave requests, payroll, onboarding, and interviews.", action: () => navigate("/hr"), badge: "HR Tools", badgeColor: "bg-indigo-100 text-indigo-700" },
-    { title: "Recruitment", description: "View job postings, review candidate applications, and manage resume screening.", action: () => navigate("/hr/applications"), badge: "Hiring", badgeColor: "bg-orange-100 text-orange-700" },
+    { title: "User Management",  description: "Create and manage Admin, HR, Employee and Candidate accounts. Assign roles.",             action: () => navigate("/admin/users"),        badge: "Core",      badgeColor: "bg-red-100 text-red-700",     icon: <Users       className="h-8 w-8" /> },
+    { title: "Departments",      description: "Create departments, assign HR heads, and track team structure.",                          action: () => navigate("/admin/departments"),  badge: "Structure", badgeColor: "bg-purple-100 text-purple-700", icon: <Building2   className="h-8 w-8" /> },
+    { title: "Announcements",    description: "Post company-wide notices visible to all employees and candidates.",                      action: () => navigate("/admin/announcements"),badge: "Comms",     badgeColor: "bg-blue-100 text-blue-700",    icon: <Megaphone   className="h-8 w-8" /> },
+    { title: "Role & Permissions",description: "View the read-only permission matrix showing what each role can access.",               action: () => navigate("/admin/permissions"),  badge: "Security",  badgeColor: "bg-green-100 text-green-700",  icon: <ShieldCheck className="h-8 w-8" /> },
+    { title: "HR Dashboard",     description: "Access all HR tools — attendance, leave requests, payroll, onboarding, and interviews.", action: () => navigate("/hr"),                 badge: "HR Tools",  badgeColor: "bg-indigo-100 text-indigo-700", icon: <Briefcase   className="h-8 w-8" /> },
+    { title: "Recruitment",      description: "View job postings, review candidate applications, and manage resume screening.",         action: () => navigate("/hr/applications"),    badge: "Hiring",    badgeColor: "bg-orange-100 text-orange-700", icon: <ClipboardList className="h-8 w-8" /> },
   ];
 
   return (
-    <div className="bg-gray-100 min-h-screen p-6 pt-20 text-gray-800">
-      <div className="max-w-6xl mx-auto">
-
-        {/* ── Header ──────────────────────────────────────────────────────────── */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-          <p className="text-gray-500 mt-1">Welcome back, {user.name || "Admin"}</p>
-        </div>
-
-        {/* ── Feature 1: Stats Row ──────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-          {statCards.map((card, i) => (
-            <div key={i} onClick={card.onClick}
-              className={`bg-white rounded-xl shadow border ${card.border} p-5 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}>
-              <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg ${card.color} text-xl mb-3`}>
-                {card.icon}
-              </div>
-              <p className="text-2xl font-bold text-gray-800">
-                {loadingStats ? <span className="inline-block w-8 h-6 bg-gray-200 rounded animate-pulse" /> : (stats ? card.value : "—")}
-              </p>
-              <p className="text-xs text-gray-500 mt-1 font-medium">{card.label}</p>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <div className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-white border-r border-gray-200 transition-all duration-300 fixed h-full z-20 overflow-y-auto`}>
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="bg-blue-600 rounded-xl w-10 h-10 flex items-center justify-center flex-shrink-0">
+              <Zap className="h-6 w-6 text-white" />
             </div>
-          ))}
+            {sidebarOpen && <span className="text-lg font-bold text-gray-900 whitespace-nowrap">HRMS</span>}
+          </div>
+
+          {/* Admin Profile Card */}
+          <div className="flex items-center gap-3 mb-8 p-3 bg-blue-50 rounded-xl cursor-pointer hover:bg-blue-100 transition group">
+            <div className="relative">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0 shadow-md overflow-hidden">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-white text-sm font-bold">{user?.name?.charAt(0)?.toUpperCase() || 'A'}</span>
+                )}
+              </div>
+              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
+                <Camera className="h-3 w-3 text-blue-500" />
+              </div>
+            </div>
+            {sidebarOpen && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">{user?.name || "Admin"}</p>
+                <p className="text-xs text-gray-500 truncate">Administrator</p>
+              </div>
+            )}
+          </div>
+
+          {/* Navigation */}
+          <nav className="space-y-1">
+            {menuItems.map((item) => (
+              <button
+                key={item.name}
+                onClick={() => navigate(item.path)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 transition-all duration-200"
+              >
+                <span className="flex-shrink-0 text-gray-500">{item.icon}</span>
+                {sidebarOpen && <span className="text-sm font-medium truncate">{item.name}</span>}
+              </button>
+            ))}
+          </nav>
+
+          {/* Logout */}
+          <div className="mt-8 pt-4 border-t border-gray-200">
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-red-50 transition">
+              <LogOut className="h-5 w-5 text-gray-500 flex-shrink-0" />
+              {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className={`${sidebarOpen ? 'ml-72' : 'ml-20'} flex-1 transition-all duration-300`}>
+        {/* Top Header */}
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+          <div className="px-8 py-4 flex justify-between items-center">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-lg hover:bg-gray-100 transition">
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+            <div className="flex items-center gap-4">
+              <button className="p-2 rounded-lg hover:bg-gray-100">
+                <Search className="h-5 w-5 text-gray-500" />
+              </button>
+              <button className="p-2 rounded-lg hover:bg-gray-100 relative">
+                <Bell className="h-5 w-5 text-gray-500" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-600 rounded-full w-8 h-8 flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">{user?.name?.charAt(0)?.toUpperCase() || 'A'}</span>
+                </div>
+                {sidebarOpen && (
+                  <div className="hidden lg:block">
+                    <p className="text-sm font-semibold text-gray-900">{user?.name || "Admin"}</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* ── Main grid: Nav cards + Activity ─────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Hero Section with Gradient */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+          <div className="px-8 py-12">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <div className="bg-white/20 backdrop-blur px-4 py-1.5 rounded-full">
+                <span className="text-sm font-bold tracking-wide">ADMIN DASHBOARD</span>
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold mb-2">Welcome back, {user?.name?.split(' ')[0] || 'Admin'}!</h1>
+            <p className="text-blue-100">Oversee users, departments, announcements, and the entire HRMS platform</p>
 
-          {/* Nav cards: 2/3 width */}
-          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
+              {statCards.map((card, i) => (
+                <div
+                  key={i}
+                  onClick={card.onClick}
+                  className="bg-white/15 backdrop-blur rounded-2xl p-4 border border-white/20 cursor-pointer hover:bg-white/20 transition"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    {card.icon}
+                    <span className="text-xs text-blue-200 bg-white/20 px-2 py-1 rounded-full">{card.badge}</span>
+                  </div>
+                  <p className="text-3xl font-bold mt-2">
+                    {loadingStats ? <span className="inline-block w-10 h-7 bg-white/20 rounded animate-pulse" /> : (stats ? card.value : "—")}
+                  </p>
+                  <p className="text-sm text-blue-100 mt-1">{card.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Access Grid */}
+        <div className="px-8 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-1 w-12 bg-blue-600 rounded-full"></div>
+              <h2 className="text-2xl font-bold text-gray-900">Quick Access</h2>
+            </div>
+            <span className="text-xs text-gray-500">Admin Tools</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {navCards.map((card, i) => (
-              <div key={i} onClick={card.action}
-                className="cursor-pointer bg-white rounded-2xl shadow border border-gray-200 p-6 flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-base font-semibold text-gray-900">{card.title}</h3>
+              <div
+                key={i}
+                onClick={card.action}
+                className="bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-blue-200 transition-all duration-300 overflow-hidden group cursor-pointer"
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                      {card.icon}
+                    </div>
                     <span className={`text-xs font-semibold px-2 py-1 rounded-full ${card.badgeColor}`}>{card.badge}</span>
                   </div>
-                  <p className="text-sm text-gray-500 leading-snug">{card.description}</p>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition">{card.title}</h3>
+                  <p className="text-gray-600 text-sm mb-4 leading-relaxed">{card.description}</p>
+                  <div className="flex justify-end">
+                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition" />
+                  </div>
                 </div>
-                <div className="mt-4 text-sm font-medium text-gray-800">Open →</div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Feature 2: Activity Feed: 1/3 width */}
-          <div className="bg-white rounded-2xl shadow border border-gray-200 p-5 flex flex-col">
+        {/* Recent Activity */}
+        <div className="px-8 pb-8">
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-gray-900">Recent Activity</h3>
-              <span className="text-xs text-gray-400">Last 20 actions</span>
+              <h3 className="text-lg font-bold text-gray-900">Recent Activity</h3>
+              <span className="text-xs text-gray-500">Last 20 actions</span>
             </div>
 
             {loadingActivity ? (
@@ -145,17 +279,17 @@ export default function AdminDashboard() {
                 ))}
               </div>
             ) : activity.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
-                <span className="text-3xl mb-2">📋</span>
+              <div className="flex flex-col items-center justify-center text-center py-8">
+                <ClipboardList className="h-8 w-8 text-gray-300 mb-2" />
                 <p className="text-sm text-gray-500">No activity yet.</p>
                 <p className="text-xs text-gray-400 mt-1">Actions will appear here.</p>
               </div>
             ) : (
-              <div className="space-y-3 overflow-y-auto flex-1 pr-1" style={{ maxHeight: "420px" }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 overflow-y-auto" style={{ maxHeight: "420px" }}>
                 {activity.map((log) => (
                   <div key={log._id} className="flex gap-3 items-start">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm flex-shrink-0">
-                      {ACTIVITY_ICONS[log.activityType] || "📌"}
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      {ACTIVITY_ICONS[log.activityType] || <Pin className="h-4 w-4 text-gray-400" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-700 leading-snug line-clamp-2">{log.description}</p>
@@ -166,6 +300,12 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-8 py-6 border-t border-gray-200 text-center">
+          <p className="text-sm text-gray-500">Need help? Our support team is here to help you succeed</p>
+          <button className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium">Contact Support →</button>
         </div>
       </div>
     </div>

@@ -58,6 +58,7 @@ import InterviewAnalyticsPage from "./pages/InterviewAnalyticsPage";
 import EmployeeTasksPage from "./pages/EmployeeTasksPage";
 import AiIdeaHubPage from "./pages/AiIdeaHubPage";
 import AiWorkAssistantPage from "./pages/AiWorkAssistantPage";
+import PromotionTrackerPage from "./pages/PromotionTrackerPage";
 
 // Interview Pages
 import RealTimeInterview from "./pages/RealTimeInterview";
@@ -225,6 +226,11 @@ export default function App() {
             <Route path="/employee/ai-ideas" element={
               <ProtectedRoute allowedRoles={["Employee"]}>
                 <AiIdeaHubPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/employee/promotion" element={
+              <ProtectedRoute allowedRoles={["Employee"]}>
+                <PromotionTrackerPage />
               </ProtectedRoute>
             } />
 
