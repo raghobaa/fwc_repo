@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 
-const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+const generateToken = (user) => jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
 // Public registration — Candidates only
 export const registerUser = async (req, res) => {
@@ -15,7 +15,7 @@ export const registerUser = async (req, res) => {
     if (userExists) return res.status(400).json({ message: "User already exists" });
 
     const user = await User.create({ name, email, password, role: "Candidate" });
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     res.status(201).json({
       message: "Registered successfully",
@@ -45,7 +45,7 @@ export const setupAdmin = async (req, res) => {
     if (userExists) return res.status(400).json({ message: "Email already in use" });
 
     const admin = await User.create({ name, email, password, role: "Admin" });
-    const token = generateToken(admin._id);
+    const token = generateToken(admin);
 
     res.status(201).json({
       message: "Admin account created",
@@ -69,7 +69,7 @@ export const loginUser = async (req, res) => {
     if (!user || !(await user.matchPassword(password)))
       return res.status(401).json({ message: "Invalid credentials" });
 
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     res.status(200).json({
       message: "Login successful",

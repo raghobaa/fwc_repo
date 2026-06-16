@@ -68,7 +68,7 @@ function NexusLogoStage({ onComplete }) {
         ))}
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes float {
           0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
           10% { opacity: 0.6; }
@@ -246,7 +246,7 @@ function LoginRegisterForm() {
         <div className="relative z-10 flex flex-col justify-between h-full p-12">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-blue-300 rounded-full animate-pulse"></div>
-            <span className="text-xs font-semibold tracking-wider uppercase">Enterprise Edition</span>
+            
           </div>
 
           <div className="space-y-8">
@@ -257,6 +257,8 @@ function LoginRegisterForm() {
             <p className="text-blue-100 max-w-sm">
               A unified command centre to hire, engage, pay, and grow your entire workforce — built for scale.
             </p>
+
+         
 
             <div className="flex flex-wrap gap-2">
               {["Real-time Payroll", "Smart Reports", "Team Hub", "AI Insights", "Compliance"].map(tag => (

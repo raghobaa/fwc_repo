@@ -25,15 +25,24 @@ export const getJobApplications = (jobId) => {
   });
 };
 
-export const getAllJobs = () => API.get("/jobs");
-
-export const getTalentHeatmap = () => {
+export const getJobApplicationsList = () => {
   const token = localStorage.getItem("token");
-  return API.get("/hr/talent-heatmap", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  return API.get("/jobs/applications", {
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
+
+export const getInterviewers = () => {
+  const token = localStorage.getItem("token");
+  return API.get("/jobs/interviewers", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+export const getAllJobs = () => API.get('/jobs');
+export const getTalentHeatmap = () => {
+  const token = localStorage.getItem("token");
+  return API.get('/hr/talent-heatmap', { headers: { Authorization: `Bearer ${token}` } });
+};
+
 
 export default API;

@@ -3,7 +3,10 @@ import mongoose from "mongoose";
 const interviewSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
-    candidateId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    candidateId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    jobApplicationId: { type: mongoose.Schema.Types.ObjectId, ref: "JobApplication" },
+    candidateName: { type: String, default: "" },
+    candidateEmail: { type: String, default: "" },
     interviewerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }],
     scheduledAt: { type: Date, required: true },
     duration: { type: Number, required: true, default: 60 }, // minutes

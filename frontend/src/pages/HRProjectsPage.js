@@ -7,6 +7,7 @@ export default function HRProjectsPage() {
     description: "",
     deadline: "",
   });
+  const today = new Date().toISOString().slice(0, 10);
 
   const fetchProjects = async () => {
     const token = localStorage.getItem("token");
@@ -20,6 +21,10 @@ export default function HRProjectsPage() {
 
   const addProject = async (e) => {
     e.preventDefault();
+    if (newProject.deadline < today) {
+      alert("Please choose today or a future deadline.");
+      return;
+    }
     const token = localStorage.getItem("token");
     const BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
     await fetch(`${BASE}/api/projects`, {
@@ -84,6 +89,7 @@ export default function HRProjectsPage() {
         />
         <input
           type="date"
+          min={today}
           value={newProject.deadline}
           onChange={(e) =>
             setNewProject({ ...newProject, deadline: e.target.value })

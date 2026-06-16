@@ -28,13 +28,13 @@ nsp.use(async (socket, next) => {
     if (!token || !roomId) return next(new Error("unauthorized"));
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded?.id;
+    const userRole = decoded?.role; // role from token payload
     if (!userId) return next(new Error("unauthorized"));
     const iv = await Interview.findOne({ roomId }).lean();
     if (!iv) return next(new Error("room_not_found"));
     const isParticipant = iv.candidateId?.toString() === userId || (iv.interviewerIds || []).some((id) => id.toString() === userId);
-    // HR can also join any interview
-    // Note: we don't fetch user here; treat non-participants as forbidden
-    if (!isParticipant) return next(new Error("forbidden"));
+    // Allow HR role to join any interview
+    if (!isParticipant && userRole !== "HR") return next(new Error("forbidden"));
     socket.data.userId = userId;
     socket.data.roomId = roomId;
     return next();
@@ -58,11 +58,14 @@ nsp.on("connection", (socket) => {
   socket.on("signal:candidate", ({ candidate }) => {
     socket.to(roomId).emit("signal:candidate", { from: userId, candidate });
   });
-  socket.on("chat:message", ({ text }) => {
-    nsp.to(roomId).emit("chat:message", { from: userId, text, ts: Date.now() });
-  });
+
   socket.on("meeting:end", async () => {
     nsp.to(roomId).emit("meeting:ended");
+  });
+
+  // Chat message handling – broadcast to all participants (including sender)
+  socket.on("chat:message", ({ text }) => {
+    nsp.to(roomId).emit("chat:message", { from: userId, text, ts: Date.now() });
   });
 
   socket.on("disconnect", () => {

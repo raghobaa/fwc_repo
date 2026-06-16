@@ -8,7 +8,8 @@ export default function HRPayrollDashboard() {
   useEffect(() => {
     const fetchSummary = async () => {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/hr/payroll/summary", {
+      const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5002";
+      const res = await fetch(`${BASE_URL}/api/hr/payroll/summary`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

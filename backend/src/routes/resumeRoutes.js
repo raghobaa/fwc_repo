@@ -58,10 +58,87 @@ router.post("/screen", protect, upload.array("resumes[]"), async (req, res) => {
       });
     }
 
-    const { jd, cutoff, autoEmail } = req.body;
-    const files = req.files;
-    
-    if (!jd) {
+    const { jd, cutoff, autoEmail, jobId } = req.body;
+    let files = req.files || [];
+    let finalJd = jd;
+
+    if (jobId) {
+      const JobApplication = (await import("../models/JobApplication.js")).default;
+      const Job = (await import("../models/Job.js")).default;
+
+      if (!finalJd) {
+        const job = await Job.findById(jobId);
+        if (job) {
+          finalJd = job.description;
+        }
+      }
+
+      if (!finalJd) {
+        return res.status(400).json({
+          success: false,
+          message: "Job description is required"
+        });
+      }
+
+      const applications = await JobApplication.find({ jobId });
+      if (!applications || applications.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No applications found for this job"
+        });
+      }
+
+      // Convert applications into file objects
+      const dbFiles = [];
+      for (const app of applications) {
+        if (app.resumePath && fs.existsSync(app.resumePath)) {
+          dbFiles.push({
+            path: app.resumePath,
+            originalname: app.resumeFilename || path.basename(app.resumePath),
+            candidateName: app.candidateName || "Anonymous"
+          });
+        }
+      }
+
+      if (dbFiles.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No valid resume files found on disk for this job's applications"
+        });
+      }
+
+      // Create form data to send to Flask service
+      const formData = new FormData();
+      formData.append("jd", finalJd);
+      formData.append("cutoff", cutoff || "0.5");
+      if (autoEmail === true || autoEmail === "true") {
+        formData.append("send_mails", "on");
+      }
+
+      // Read files from disk and append to form data
+      for (const file of dbFiles) {
+        const fileData = fs.readFileSync(file.path);
+        const blob = new Blob([fileData]);
+        const ext = path.extname(file.originalname) || ".pdf";
+        const filename = `${file.candidateName.replace(/[^a-zA-Z0-9]/g, '_')}${ext}`;
+        formData.append("resumes[]", blob, filename);
+      }
+
+      // Send request to Flask service
+      const response = await axios.post(`${FLASK_SERVICE_URL}/api/screen`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      });
+
+      const data = response.data || {};
+      const results = Array.isArray(data.results) ? data.results : [];
+      const cutoffValue = data.cutoff;
+      return res.json({ success: true, results, cutoff: cutoffValue });
+    }
+
+    // Legacy manual upload flow
+    if (!finalJd) {
       return res.status(400).json({ 
         success: false, 
         message: "Job description is required" 
@@ -77,7 +154,7 @@ router.post("/screen", protect, upload.array("resumes[]"), async (req, res) => {
 
     // Create form data to send to Flask service
     const formData = new FormData();
-    formData.append("jd", jd);
+    formData.append("jd", finalJd);
     formData.append("cutoff", cutoff || "0.5");
     if (autoEmail === true || autoEmail === "true") {
       formData.append("send_mails", "on");

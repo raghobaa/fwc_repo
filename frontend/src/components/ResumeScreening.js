@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import resumeService from '../api/resumeService';
+import { getAllJobs } from '../api/api';
 
 const ResumeScreening = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -10,6 +11,9 @@ const ResumeScreening = () => {
   const [error, setError] = useState('');
   const [serviceAvailable, setServiceAvailable] = useState(true);
   const [autoEmail, setAutoEmail] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [selectedJobId, setSelectedJobId] = useState('');
+  const [screeningMode, setScreeningMode] = useState('db');
 
   useEffect(() => {
     const checkService = async () => {
@@ -23,8 +27,31 @@ const ResumeScreening = () => {
         );
       }
     };
+    const fetchJobs = async () => {
+      try {
+        const response = await getAllJobs();
+        if (response && response.data) {
+          setJobs(response.data);
+        }
+      } catch (err) {
+        console.error('Error fetching jobs:', err);
+      }
+    };
     checkService();
+    fetchJobs();
   }, []);
+
+  const handleJobChange = (e) => {
+    const jobId = e.target.value;
+    setSelectedJobId(jobId);
+    if (jobId) {
+      const job = jobs.find((j) => j._id === jobId);
+      if (job) {
+        setJobDescription(job.description || '');
+      }
+      setScreeningMode('db');
+    }
+  };
 
   const handleFileChange = (e) => {
     setFiles([...e.target.files]);
@@ -55,8 +82,13 @@ const ResumeScreening = () => {
       return;
     }
 
-    if (files.length === 0) {
+    if (screeningMode === 'manual' && files.length === 0) {
       setError('Please upload at least one resume');
+      return;
+    }
+
+    if (screeningMode === 'db' && !selectedJobId) {
+      setError('Please select a job from the database');
       return;
     }
 
@@ -69,16 +101,21 @@ const ResumeScreening = () => {
       formData.append('cutoff', cutoffScore.toString());
       formData.append('autoEmail', autoEmail ? 'true' : 'false');
 
-      files.forEach((file) => {
-        formData.append('resumes[]', file);
-      });
+      if (screeningMode === 'db') {
+        formData.append('jobId', selectedJobId);
+      } else {
+        files.forEach((file) => {
+          formData.append('resumes[]', file);
+        });
+      }
 
       const response = await resumeService.screenResumes(formData);
       const responseResults = response.results || [];
       setResults(Array.isArray(responseResults) ? responseResults : []);
-    } catch (error) {
-      console.error('Error screening resumes:', error);
-      setError('Failed to screen resumes. Please try again.');
+    } catch (err) {
+      console.error('Error screening resumes:', err);
+      const msg = err.response?.data?.message || 'Failed to screen resumes. Please try again.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -152,6 +189,64 @@ const ResumeScreening = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1.5 text-sm font-semibold text-gray-700">
+                  Select Job to Screen Applications:
+                </label>
+                <select
+                  value={selectedJobId}
+                  onChange={handleJobChange}
+                  className="w-full p-2.5 bg-white border border-gray-300 rounded text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                >
+                  <option value="">-- Choose Job Opening --</option>
+                  {jobs.map((job) => (
+                    <option key={job._id} value={job._id}>
+                      {job.title} ({job.location || 'Remote'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-1.5 text-sm font-semibold text-gray-700">
+                  Screening Mode:
+                </label>
+                <div className="flex gap-4 mt-2">
+                  <label className="inline-flex items-center text-sm text-gray-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="screeningMode"
+                      value="db"
+                      checked={screeningMode === 'db'}
+                      onChange={() => setScreeningMode('db')}
+                      className="mr-2"
+                      disabled={!selectedJobId}
+                    />
+                    Screen Database Applications
+                  </label>
+                  <label className="inline-flex items-center text-sm text-gray-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="screeningMode"
+                      value="manual"
+                      checked={screeningMode === 'manual'}
+                      onChange={() => setScreeningMode('manual')}
+                      className="mr-2"
+                    />
+                    Upload Local Resumes
+                  </label>
+                </div>
+                {!selectedJobId && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    Select a job above to screen database applications.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block mb-2 font-medium text-gray-700">
               Job Description:
@@ -166,56 +261,67 @@ const ResumeScreening = () => {
             />
           </div>
 
-          <div>
-            <label className="block mb-2 font-medium text-gray-700">
-              Upload Resumes:
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
-              <input
-                type="file"
-                onChange={handleFileChange}
-                className="mb-2"
-                accept=".pdf,.doc,.docx"
-                multiple
-                required
-              />
+          {screeningMode === 'manual' ? (
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">
+                Upload Resumes:
+              </label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50">
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="mb-2"
+                  accept=".pdf,.doc,.docx"
+                  multiple
+                  required
+                />
 
-              {files.length > 0 && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {files.length} file(s) selected:
-                  </p>
-                  <ul className="space-y-1">
-                    {files.map((file, index) => (
-                      <li
-                        key={index}
-                        className="flex justify-between items-center bg-white border rounded p-2 text-gray-800"
-                      >
-                        <span>{file.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(index)}
-                          className="text-red-600 hover:text-red-700 text-sm font-medium"
+                {files.length > 0 && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {files.length} file(s) selected:
+                    </p>
+                    <ul className="space-y-1">
+                      {files.map((file, index) => (
+                        <li
+                          key={index}
+                          className="flex justify-between items-center bg-white border rounded p-2 text-gray-800"
                         >
-                          Remove
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                          <span>{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(index)}
+                            className="text-red-600 hover:text-red-700 text-sm font-medium"
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
 
-                  <div className="mt-3">
-                    <input
-                      type="file"
-                      onChange={handleAddMoreFiles}
-                      className="mt-1"
-                      accept=".pdf,.doc,.docx"
-                      multiple
-                    />
+                    <div className="mt-3">
+                      <input
+                        type="file"
+                        onChange={handleAddMoreFiles}
+                        className="mt-1"
+                        accept=".pdf,.doc,.docx"
+                        multiple
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-gray-50 border rounded-lg p-4 text-center">
+              <p className="text-sm text-gray-600 font-medium">
+                📁 Screening submitted resumes from the database for the selected job.
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                This screens files directly uploaded by candidates when applying.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block mb-2 font-medium text-gray-700">

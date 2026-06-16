@@ -13,6 +13,12 @@ const StatusPill = ({ status }) => {
   return <span className={`px-2 py-1 rounded text-xs font-medium ${color}`}>{status}</span>;
 };
 
+const canJoinInterview = (interview) => (
+  interview.roomId
+  && ['scheduled', 'in_progress'].includes(interview.status)
+  && new Date(interview.scheduledAt) >= new Date()
+);
+
 const CandidateInterviewsPageInner = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,7 +39,10 @@ const CandidateInterviewsPageInner = () => {
 
   useEffect(() => { load(); }, []);
 
-  const upcoming = useMemo(() => (items || []).filter(iv => iv.status === 'scheduled' || iv.status === 'in_progress'), [items]);
+  const upcoming = useMemo(
+    () => (items || []).filter(iv => ['scheduled', 'in_progress'].includes(iv.status) && new Date(iv.scheduledAt) >= new Date()),
+    [items]
+  );
 
   return (
     <div className="p-6">
@@ -64,7 +73,7 @@ const CandidateInterviewsPageInner = () => {
                 <td className="p-3 border border-gray-200">{iv.duration}m</td>
                 <td className="p-3 border border-gray-200"><StatusPill status={iv.status} /></td>
                 <td className="p-3 border border-gray-200">
-                  {iv.roomId && (
+                  {canJoinInterview(iv) && (
                     <a href={`/interview/room/${iv.roomId}`} className="text-green-700 hover:underline">Join Room</a>
                   )}
                 </td>

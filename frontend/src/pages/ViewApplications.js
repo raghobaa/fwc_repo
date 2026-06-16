@@ -19,9 +19,15 @@ export default function ViewApplications() {
       setExpandedJob(null);
       return;
     }
-    const { data } = await getJobApplications(jobId);
-    setApplications((prev) => ({ ...prev, [jobId]: data }));
-    setExpandedJob(jobId);
+    try {
+      const { data } = await getJobApplications(jobId);
+      setApplications((prev) => ({ ...prev, [jobId]: data }));
+      setExpandedJob(jobId);
+    } catch (err) {
+      console.error("Failed to load job applications", err);
+      setApplications((prev) => ({ ...prev, [jobId]: [] }));
+      setExpandedJob(jobId);
+    }
   };
 
   return (
@@ -77,7 +83,7 @@ export default function ViewApplications() {
                           </p>
                         </div>
                         <a
-                          href={`http://localhost:5000/${app.resumePath}`}
+                          href={`${process.env.REACT_APP_API_URL || "http://localhost:5002"}/${app.resumePath}`}
                           download
                           target="_blank"
                           rel="noreferrer"

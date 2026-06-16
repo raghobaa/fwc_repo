@@ -22,11 +22,17 @@ router.post("/", protect, authorizeRoles("HR", "Admin"), async (req, res) => {
     if (!title || !description || !deadline) {
       return res.status(400).json({ message: "All fields are required" });
     }
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (Number.isNaN(deadlineDate.getTime()) || deadlineDate < today) {
+      return res.status(400).json({ message: "Project deadline must be today or a future date" });
+    }
 
     const project = await Project.create({
       title,
       description,
-      deadline,
+      deadline: deadlineDate,
       status: "Active",
     });
 
