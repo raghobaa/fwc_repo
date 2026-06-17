@@ -170,7 +170,7 @@ function NexusLogoStage({ onComplete }) {
               ENTERPRISE WORKFORCE PLATFORM
             </p>
             <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-700 bg-clip-text text-transparent mt-3">
-              Nexus HRMS
+              Prashasana
             </h1>
             <div className="mt-5 text-blue-500 animate-bounce text-sm font-medium">✦ Click logo to sign in ✦</div>
           </div>
@@ -270,7 +270,7 @@ function LoginRegisterForm() {
             </div>
           </div>
 
-          <div className="text-xs text-blue-200">© 2025 Nexus HRMS – All rights reserved</div>
+          <div className="text-xs text-blue-200">© 2025 Prashasana – All rights reserved</div>
         </div>
       </div>
 

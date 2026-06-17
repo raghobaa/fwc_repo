@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from "react-route
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 
+import LandingPage from "./pages/LandingPage";
 import AuthForms from "./components/AuthForms";
 import DashboardRedirect from "./pages/DashboardRedirect";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -66,7 +67,7 @@ import WrittenInterview from "./pages/WrittenInterview";
 
 function LayoutWrapper({ children }) {
   const location = useLocation();
-  const hideLayout = ["/", "/register", "/setup"].includes(location.pathname);
+  const hideLayout = ["/", "/login", "/register", "/setup"].includes(location.pathname);
 
   return (
     <>
@@ -84,7 +85,8 @@ export default function App() {
         <LayoutWrapper>
           <Routes>
             {/* Public */}
-            <Route path="/" element={<AuthForms />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<AuthForms />} />
             <Route path="/setup" element={<SetupPage />} />
             <Route path="/dashboard" element={<DashboardRedirect />} />
 

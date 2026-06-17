@@ -4,26 +4,22 @@ import { useNavigate } from "react-router-dom";
 import { createJob } from "../api/api";
 import AnnouncementBanner from "../components/AnnouncementBanner";
 import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
+  PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip,
 } from "recharts";
+import {
+  LayoutDashboard, Users, Building2, Megaphone, ShieldCheck, ClipboardList,
+  Bell, Search, Menu, X, LogOut, Camera, Zap, ChevronRight,
+  UserPlus, Trash2, RefreshCw, CheckCircle, XCircle, Edit, DollarSign,
+  Target, UserCheck, Briefcase,
+} from 'lucide-react';
 
 /* ─── Chatbot message renderer ─────────────────────────────────────────────── */
 function BotMessageCard({ text }) {
-  // Parse markdown-like lists and bold text into styled JSX
   const lines = text.split("\n").filter((l) => l.trim() !== "");
   return (
     <div className="bot-card">
       {lines.map((line, i) => {
         const trimmed = line.trim();
-        // Heading lines (## or bold-only lines)
         if (trimmed.startsWith("## ")) {
           return (
             <p key={i} className="bot-heading">
@@ -31,7 +27,6 @@ function BotMessageCard({ text }) {
             </p>
           );
         }
-        // Numbered list
         if (/^\d+\.\s/.test(trimmed)) {
           return (
             <div key={i} className="bot-list-item">
@@ -40,7 +35,6 @@ function BotMessageCard({ text }) {
             </div>
           );
         }
-        // Bullet list
         if (trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
           return (
             <div key={i} className="bot-bullet-item">
@@ -49,7 +43,6 @@ function BotMessageCard({ text }) {
             </div>
           );
         }
-        // Normal line
         return (
           <p key={i} className="bot-text">
             {renderBold(trimmed)}
@@ -69,6 +62,10 @@ function renderBold(text) {
 
 /* ─── Main HR Dashboard ─────────────────────────────────────────────────────── */
 export default function HRDashboard() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const [showModal, setShowModal] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState([
@@ -85,7 +82,6 @@ export default function HRDashboard() {
   const [payrollSummary, setPayrollSummary] = useState([]);
   const [activeProject, setActiveProject] = useState(null);
   const messagesEndRef = useRef(null);
-  const navigate = useNavigate();
 
   /* ── Dashboard data fetch ────────────────────────────────────────────────── */
   useEffect(() => {
@@ -211,7 +207,7 @@ export default function HRDashboard() {
       } else if (err.response?.status === 403) {
         errorMsg = "⚠️ **Access denied.** This chatbot is for HR users only.";
       } else if (err.response?.status === 500) {
-        errorMsg = `⚠️ **AI service error:** ${err.response?.data?.error || "Please try again."}}`;
+        errorMsg = `⚠️ **AI service error:** ${err.response?.data?.error || "Please try again."}`;
       } else if (err.code === "ECONNABORTED") {
         errorMsg = "⚠️ **Request timed out.** The AI is taking too long. Please try again.";
       }
@@ -221,63 +217,28 @@ export default function HRDashboard() {
     }
   };
 
+  /* ── Sidebar navigation ───────────────────────────────────────────────── */
+  const menuItems = [
+    { name: "Dashboard",        icon: <LayoutDashboard className="h-5 w-5" />, path: "/hr" },
+    { name: "Employee Mgmt",    icon: <Users           className="h-5 w-5" />, path: "/hr/employee-management" },
+    { name: "Attendance",       icon: <ClipboardList   className="h-5 w-5" />, path: "/hr/attendance" },
+    { name: "Leave Requests",   icon: <Megaphone       className="h-5 w-5" />, path: "/hr/leave" },
+    { name: "Payroll",          icon: <DollarSign      className="h-5 w-5" />, path: "/hr/payroll" },
+    { name: "Projects",         icon: <Briefcase       className="h-5 w-5" />, path: "/hr/projects" },
+    { name: "Onboarding",       icon: <UserPlus        className="h-5 w-5" />, path: "/hr/onboarding" },
+    { name: "Interviews",       icon: <Target          className="h-5 w-5" />, path: "/hr/interviews" },
+    { name: "Applications",     icon: <ClipboardList   className="h-5 w-5" />, path: "/hr/applications" },
+    { name: "Feedback",         icon: <Edit            className="h-5 w-5" />, path: "/hr/feedback" },
+    { name: "Talent Heatmap",   icon: <Target          className="h-5 w-5" />, path: "/hr/talent-heatmap" },
+  ];
 
-  /* ── Feature cards ───────────────────────────────────────────────────────── */
-  const features = [
-    {
-      title: "Jobs",
-      icon: "💼",
-      description: "Post new job openings and track applicants throughout the hiring pipeline.",
-      onClick: () => setShowModal(true),
-    },
-    {
-      title: "Bulk Resume Screening",
-      icon: "📄",
-      description: "Upload multiple resumes and let AI auto-screen and rank top candidates.",
-      onClick: () => navigate("/hr/resume-screening"),
-    },
-    {
-      title: "HR Resume Chatbot",
-      icon: "🔍",
-      description: "Ask AI to find candidates from the uploaded resume library.",
-      onClick: () => navigate("/hr/resume-screening?tab=chat"),
-    },
-    {
-      title: "Onboarding",
-      icon: "🚀",
-      description: "Manage candidate onboarding: start, track status, or withdraw when needed.",
-      onClick: () => navigate("/hr/onboarding"),
-    },
-    {
-      title: "Interviews",
-      icon: "🎙️",
-      description: "Schedule and manage interviews, monitor slots, and track progress.",
-      onClick: () => navigate("/hr/interviews"),
-    },
-    {
-      title: "View Applications",
-      icon: "📋",
-      description: "Access candidate applications, view resumes, and streamline recruitment.",
-      onClick: () => navigate("/hr/applications"),
-    },
-    {
-      title: "Employee Management",
-      icon: "👥",
-      description: "View and manage employee profiles, roles, and departments.",
-      onClick: () => navigate("/hr/employee-management"),
-    },
-    {
-      title: "AI Talent Heatmap",
-      icon: "🗺️",
-      description: "See department-wise skill strength, gaps, and training recommendations.",
-      onClick: () => navigate("/hr/talent-heatmap"),
-    },
-    {
-      title: "Feedback",
-      icon: "💬",
-      description: "Collect, analyze and review employee feedback to enhance engagement.",
-      onClick: () => navigate("/hr/feedback"),
-    },
+  /* ── Stat cards ───────────────────────────────────────────────────────── */
+  const statCards = [
+    { label: "Employees",       value: "—",  icon: <Users       className="h-8 w-8 text-blue-200" />, badge: "Team",   onClick: () => navigate("/hr/employee-management") },
+    { label: "Pending Leaves",  value: leaveCount, icon: <Megaphone   className="h-8 w-8 text-blue-200" />, badge: "Leave",  onClick: () => navigate("/hr/leave") },
+    { label: "Attendance Today",value: `${presentCount}%`, icon: <ClipboardList className="h-8 w-8 text-blue-200" />, badge: "Today",  onClick: () => navigate("/hr/attendance") },
+    { label: "Active Projects", value: activeProject ? 1 : 0, icon: <Briefcase   className="h-8 w-8 text-blue-200" />, badge: "Active", onClick: () => navigate("/hr/projects") },
+    { label: "Job Openings",    value: "—",  icon: <Target      className="h-8 w-8 text-blue-200" />, badge: "Hiring", onClick: () => setShowModal(true) },
   ];
 
   /* ── Suggested prompts ───────────────────────────────────────────────────── */
@@ -287,6 +248,87 @@ export default function HRDashboard() {
     "Show payroll summary",
     "Which projects are active?",
   ];
+
+  /* ── Feature cards ───────────────────────────────────────────────────────── */
+  const features = [
+    {
+      title: "Jobs",
+      description: "Post new job openings and track applicants throughout the hiring pipeline.",
+      onClick: () => setShowModal(true),
+      badge: "Hiring",
+      badgeColor: "bg-blue-100 text-blue-700",
+      icon: <Briefcase className="h-8 w-8" />,
+    },
+    {
+      title: "Bulk Resume Screening",
+      description: "Upload multiple resumes and let AI auto-screen and rank top candidates.",
+      onClick: () => navigate("/hr/resume-screening"),
+      badge: "AI",
+      badgeColor: "bg-purple-100 text-purple-700",
+      icon: <ClipboardList className="h-8 w-8" />,
+    },
+    {
+      title: "HR Resume Chatbot",
+      description: "Ask AI to find candidates from the uploaded resume library.",
+      onClick: () => navigate("/hr/resume-screening?tab=chat"),
+      badge: "AI",
+      badgeColor: "bg-indigo-100 text-indigo-700",
+      icon: <Target className="h-8 w-8" />,
+    },
+    {
+      title: "Onboarding",
+      description: "Manage candidate onboarding: start, track status, or withdraw when needed.",
+      onClick: () => navigate("/hr/onboarding"),
+      badge: "HR",
+      badgeColor: "bg-green-100 text-green-700",
+      icon: <UserPlus className="h-8 w-8" />,
+    },
+    {
+      title: "Interviews",
+      description: "Schedule and manage interviews, monitor slots, and track progress.",
+      onClick: () => navigate("/hr/interviews"),
+      badge: "HR",
+      badgeColor: "bg-orange-100 text-orange-700",
+      icon: <Target className="h-8 w-8" />,
+    },
+    {
+      title: "View Applications",
+      description: "Access candidate applications, view resumes, and streamline recruitment.",
+      onClick: () => navigate("/hr/applications"),
+      badge: "Hiring",
+      badgeColor: "bg-cyan-100 text-cyan-700",
+      icon: <ClipboardList className="h-8 w-8" />,
+    },
+    {
+      title: "Employee Management",
+      description: "View and manage employee profiles, roles, and departments.",
+      onClick: () => navigate("/hr/employee-management"),
+      badge: "Core",
+      badgeColor: "bg-red-100 text-red-700",
+      icon: <Users className="h-8 w-8" />,
+    },
+    {
+      title: "AI Talent Heatmap",
+      description: "See department-wise skill strength, gaps, and training recommendations.",
+      onClick: () => navigate("/hr/talent-heatmap"),
+      badge: "AI",
+      badgeColor: "bg-pink-100 text-pink-700",
+      icon: <Target className="h-8 w-8" />,
+    },
+    {
+      title: "Feedback",
+      description: "Collect, analyze and review employee feedback to enhance engagement.",
+      onClick: () => navigate("/hr/feedback"),
+      badge: "Engage",
+      badgeColor: "bg-teal-100 text-teal-700",
+      icon: <Edit className="h-8 w-8" />,
+    },
+  ];
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
 
   return (
     <>
@@ -402,7 +444,6 @@ export default function HRDashboard() {
           box-shadow: 0 2px 10px rgba(99,102,241,0.3);
         }
 
-        /* ── Bot card ─── */
         .bot-card {
           background: #fff;
           border: 1px solid #E2E8F0;
@@ -467,7 +508,6 @@ export default function HRDashboard() {
           flex-shrink: 0;
         }
 
-        /* ── Typing indicator ─── */
         .typing-indicator {
           display: flex;
           align-items: center;
@@ -494,7 +534,6 @@ export default function HRDashboard() {
           40% { transform: scale(1); background: #1E3A8A; }
         }
 
-        /* ── Suggestions ─── */
         .suggestions-bar {
           display: flex;
           gap: 8px;
@@ -520,7 +559,6 @@ export default function HRDashboard() {
         }
         .suggestion-chip:hover { background: #1E3A8A; color: #fff; border-color: #1E3A8A; }
 
-        /* ── Input area ─── */
         .hr-chat-input-area {
           padding: 14px 20px;
           background: #fff;
@@ -560,7 +598,6 @@ export default function HRDashboard() {
         .hr-chat-send:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(30,58,138,0.4); }
         .hr-chat-send:active { transform: scale(0.97); }
 
-        /* ── Chatbot trigger card ─── */
         .chatbot-trigger-card {
           background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
           border-radius: 16px;
@@ -570,7 +607,6 @@ export default function HRDashboard() {
           align-items: center;
           gap: 18px;
           max-width: 1300px;
-          margin: 0 auto 24px auto;
           box-shadow: 0 8px 30px rgba(30,58,138,0.25);
           transition: transform 0.2s, box-shadow 0.2s;
           position: relative;
@@ -614,7 +650,6 @@ export default function HRDashboard() {
           z-index: 1;
         }
 
-        /* ── Online dot ─── */
         .online-dot {
           width: 8px; height: 8px;
           background: #4ADE80;
@@ -629,91 +664,173 @@ export default function HRDashboard() {
         }
       `}</style>
 
-      <div className="bg-gray-100 min-h-screen p-8 pt-20 text-gray-800 font-inter flex flex-col justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-8 tracking-tight text-center">HR Dashboard</h1>
-
-          <AnnouncementBanner />
-
-          {/* ── Top Stats ──────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 max-w-[1300px] mx-auto">
-            {/* Attendance */}
-            <div onClick={() => navigate("/hr/attendance")} className="bg-white rounded-xl p-6 shadow hover:shadow-lg transition cursor-pointer">
-              <h2 className="text-lg font-semibold mb-2">Today's Attendance</h2>
-              <div className="flex justify-center">
-                <ResponsiveContainer width="100%" height={150}>
-                  <PieChart>
-                    <Pie data={attendanceChart} innerRadius={45} outerRadius={70} dataKey="value">
-                      {attendanceChart.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Sidebar */}
+        <div className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-white border-r border-gray-200 transition-all duration-300 fixed h-full z-20 overflow-y-auto`}>
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="bg-blue-600 rounded-xl w-10 h-10 flex items-center justify-center flex-shrink-0">
+                <Zap className="h-6 w-6 text-white" />
               </div>
-              <p className="text-center font-bold">{presentCount}% Present</p>
-              <p className="text-center text-sm text-gray-500 mt-1">Click to view detailed attendance logs</p>
+              {sidebarOpen && <span className="text-lg font-bold text-gray-900 whitespace-nowrap">HRMS</span>}
             </div>
 
-            {/* Leave */}
-            <div onClick={() => navigate("/hr/leave")} className="bg-white rounded-xl p-6 shadow hover:shadow-lg transition cursor-pointer text-center">
-              <h2 className="text-lg font-semibold mb-2">Pending Leave Requests</h2>
-              <p className="text-4xl font-bold text-indigo-600">{leaveCount}</p>
-              <p className="text-gray-500">{leaveCount > 0 ? "Requests awaiting your action" : "No pending requests"}</p>
-            </div>
-
-            {/* Payroll */}
-            <div onClick={() => navigate("/hr/payroll")} className="bg-white rounded-xl p-6 shadow hover:shadow-lg transition cursor-pointer">
-              <h2 className="text-lg font-semibold mb-4">Payroll Distribution</h2>
-              <ResponsiveContainer width="100%" height={150}>
-                <BarChart data={payrollSummary}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#1E3A8A" />
-                </BarChart>
-              </ResponsiveContainer>
-              <p className="text-center text-sm text-gray-500 mt-1">View payroll details and monthly breakdown</p>
-            </div>
-          </div>
-
-          {/* ── HR AI Chatbot Trigger Card ────────────────────────────────── */}
-          <div className="chatbot-trigger-card" onClick={() => setShowChat(true)} id="hr-chatbot-trigger">
-            <div className="chatbot-trigger-icon">🤖</div>
-            <div className="chatbot-trigger-text">
-              <h3>HR AI Assistant</h3>
-              <p><span className="online-dot" />Ask anything about employees, leave, payroll, projects & more</p>
-            </div>
-            <div className="chatbot-trigger-arrow">→</div>
-          </div>
-
-          {/* ── Feature Cards ─────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[1300px] mx-auto">
-            {/* Project card */}
-            <div onClick={() => navigate("/hr/projects")} className="bg-white rounded-xl p-6 shadow hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer h-[180px] flex flex-col justify-center">
-              <h3 className="text-lg font-semibold mb-2 text-gray-800 tracking-tight">Current Project</h3>
-              {activeProject ? (
-                <>
-                  <p className="text-indigo-600 font-semibold text-lg">{activeProject.title}</p>
-                  <p className="text-sm text-gray-600 mt-1">Deadline: {new Date(activeProject.deadline).toLocaleDateString()}</p>
-                  <p className="text-xs text-gray-500 mt-2 italic">View past projects & manage progress →</p>
-                </>
-              ) : (
-                <p className="text-sm text-gray-500">No active project. <span className="underline text-indigo-600">Click here</span> to view past projects.</p>
+            {/* HR Profile Card */}
+            <div className="flex items-center gap-3 mb-8 p-3 bg-blue-50 rounded-xl cursor-pointer hover:bg-blue-100 transition group">
+              <div className="relative">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0 shadow-md overflow-hidden">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-white text-sm font-bold">{user?.name?.charAt(0)?.toUpperCase() || 'H'}</span>
+                  )}
+                </div>
+                <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
+                  <Camera className="h-3 w-3 text-blue-500" />
+                </div>
+              </div>
+              {sidebarOpen && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{user?.name || "HR"}</p>
+                  <p className="text-xs text-gray-500 truncate">Human Resources</p>
+                </div>
               )}
             </div>
 
-            {features.map((f, idx) => (
-              <div
-                key={idx}
-                onClick={f.onClick}
-                className="bg-white rounded-xl p-6 shadow hover:shadow-xl transition transform hover:-translate-y-1 cursor-pointer h-[180px] flex flex-col justify-center"
-              >
-                <div className="text-2xl mb-2">{f.icon}</div>
-                <h3 className="text-lg font-semibold mb-1 text-gray-800 hover:text-indigo-600 transition-colors tracking-tight">{f.title}</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">{f.description}</p>
+            {/* Navigation */}
+            <nav className="space-y-1">
+              {menuItems.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => navigate(item.path)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-blue-50 transition-all duration-200"
+                >
+                  <span className="flex-shrink-0 text-gray-500">{item.icon}</span>
+                  {sidebarOpen && <span className="text-sm font-medium truncate">{item.name}</span>}
+                </button>
+              ))}
+            </nav>
+
+            {/* Logout */}
+            <div className="mt-8 pt-4 border-t border-gray-200">
+              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-red-50 transition">
+                <LogOut className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className={`${sidebarOpen ? 'ml-72' : 'ml-20'} flex-1 transition-all duration-300`}>
+          {/* Top Header */}
+          <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+            <div className="px-8 py-4 flex justify-between items-center">
+              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 rounded-lg hover:bg-gray-100 transition">
+                {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+              <div className="flex items-center gap-4">
+                <button className="p-2 rounded-lg hover:bg-gray-100">
+                  <Search className="h-5 w-5 text-gray-500" />
+                </button>
+                <button className="p-2 rounded-lg hover:bg-gray-100 relative">
+                  <Bell className="h-5 w-5 text-gray-500" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-600 rounded-full w-8 h-8 flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">{user?.name?.charAt(0)?.toUpperCase() || 'H'}</span>
+                  </div>
+                  {sidebarOpen && (
+                    <div className="hidden lg:block">
+                      <p className="text-sm font-semibold text-gray-900">{user?.name || "HR"}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
+            </div>
+          </div>
+
+          {/* Hero Section with Gradient */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+            <div className="px-8 py-12">
+              <div className="inline-flex items-center gap-2 mb-4">
+                <div className="bg-white/20 backdrop-blur px-4 py-1.5 rounded-full">
+                  <span className="text-sm font-bold tracking-wide">HR DASHBOARD</span>
+                </div>
+              </div>
+              <h1 className="text-4xl font-bold mb-2">Welcome back, {user?.name?.split(' ')[0] || 'HR'}!</h1>
+              <p className="text-blue-100">Manage employees, attendance, leave, payroll, and more</p>
+
+              {/* Stats Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
+                {statCards.map((card, i) => (
+                  <div
+                    key={i}
+                    onClick={card.onClick}
+                    className="bg-white/15 backdrop-blur rounded-2xl p-4 border border-white/20 cursor-pointer hover:bg-white/20 transition"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      {card.icon}
+                      <span className="text-xs text-blue-200 bg-white/20 px-2 py-1 rounded-full">{card.badge}</span>
+                    </div>
+                    <p className="text-3xl font-bold mt-2">{card.value}</p>
+                    <p className="text-sm text-blue-100 mt-1">{card.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Access Grid */}
+          <div className="px-8 py-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="h-1 w-12 bg-blue-600 rounded-full"></div>
+                <h2 className="text-2xl font-bold text-gray-900">Quick Access</h2>
+              </div>
+              <span className="text-xs text-gray-500">HR Tools</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {features.map((card, i) => (
+                <div
+                  key={i}
+                  onClick={card.onClick}
+                  className="bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-xl hover:border-blue-200 transition-all duration-300 overflow-hidden group cursor-pointer"
+                >
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="bg-gradient-to-r from-blue-500 to-blue-600 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform">
+                        {card.icon}
+                      </div>
+                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${card.badgeColor}`}>{card.badge}</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition">{card.title}</h3>
+                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">{card.description}</p>
+                    <div className="flex justify-end">
+                      <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* HR AI Chatbot Trigger Card */}
+            <div className="mt-8 chatbot-trigger-card" onClick={() => setShowChat(true)} id="hr-chatbot-trigger">
+              <div className="chatbot-trigger-icon">🤖</div>
+              <div className="chatbot-trigger-text">
+                <h3>HR AI Assistant</h3>
+                <p><span className="online-dot" />Ask anything about employees, leave, payroll, projects & more</p>
+              </div>
+              <div className="chatbot-trigger-arrow">→</div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-8 py-6 border-t border-gray-200 text-center">
+            <p className="text-sm text-gray-500">Need help? Our support team is here to help you succeed</p>
+            <button className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium">Contact Support →</button>
           </div>
         </div>
 
@@ -747,7 +864,6 @@ export default function HRDashboard() {
         {showChat && (
           <div className="hr-chat-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowChat(false); }}>
             <div className="hr-chat-window" id="hr-chatbot-window">
-              {/* Header */}
               <div className="hr-chat-header">
                 <div className="hr-chat-header-left">
                   <div className="hr-chat-avatar">🤖</div>
@@ -759,7 +875,6 @@ export default function HRDashboard() {
                 <button className="hr-chat-close" onClick={() => setShowChat(false)}>✕</button>
               </div>
 
-              {/* Messages */}
               <div className="hr-chat-messages" id="hr-chatbot-messages">
                 {messages.map((msg, idx) => (
                   <div key={idx} className={`msg-row ${msg.sender}`}>
@@ -787,7 +902,6 @@ export default function HRDashboard() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Suggestions */}
               {messages.length <= 1 && (
                 <div className="suggestions-bar">
                   {suggestions.map((s, i) => (
@@ -799,7 +913,6 @@ export default function HRDashboard() {
                 </div>
               )}
 
-              {/* Input */}
               <form className="hr-chat-input-area" onSubmit={handleSendMessage} id="hr-chatbot-form">
                 <input
                   id="hr-chatbot-input"
